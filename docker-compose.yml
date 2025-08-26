@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: sierrarowerra-postgres-db
+    ports:
+      #PORT 5433 TO CONNECT!!!
+      - "5433:5432"
+    environment:
+      - POSTGRES_DB=sierrarowerra
+      - POSTGRES_USER=sierrarowerra_user
+      - POSTGRES_PASSWORD=123QWElkjasdA412

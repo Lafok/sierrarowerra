@@ -3,7 +3,6 @@ package com.sierrarowerra.model.dto;
 import com.sierrarowerra.model.validation.ValidBookingDates;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -23,7 +22,4 @@ public class BookingRequestDto {
     @NotNull(message = "End date cannot be null")
     @Future(message = "End date must be in the future")
     private LocalDate endDate;
-
-    @NotBlank(message = "Customer name cannot be empty")
-    private String customerName;
 }

@@ -26,16 +26,17 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "bike_id", nullable = false)
     private Bike bike;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(nullable = false)
     private LocalDate bookingStartDate;
 
     @Column(nullable = false)
     private LocalDate bookingEndDate;
-
-    @Column(nullable = false)
-    private String customerName;
 }

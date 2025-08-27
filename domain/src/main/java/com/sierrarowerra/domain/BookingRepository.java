@@ -16,4 +16,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findOverlappingBookings(@Param("bikeId") Long bikeId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     boolean existsByBikeId(Long bikeId);
+
+    List<Booking> findByUserId(Long userId);
 }

@@ -9,6 +9,6 @@ public class BookingResponseDto {
     private Long id;
     private LocalDate startDate;
     private LocalDate endDate;
-    private String customerName;
+    private UserDto user;
     private BikeDto bike;
 }

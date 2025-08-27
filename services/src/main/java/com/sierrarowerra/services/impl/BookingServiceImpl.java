@@ -14,10 +14,12 @@ import com.sierrarowerra.services.mapper.BookingMapper;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -65,13 +67,7 @@ public class BookingServiceImpl implements BookingService {
     public List<BookingResponseDto> findAll(Long userId, Set<String> roles) {
         logger.info("Checking bookings for userId: {}. Roles: {}", userId, roles);
 
-        boolean isUserAdmin = false;
-        for (String role : roles) {
-            if (role.equals(ERole.ROLE_ADMIN.name())) {
-                isUserAdmin = true;
-                break;
-            }
-        }
+        boolean isUserAdmin = roles.stream().anyMatch(role -> role.equals(ERole.ROLE_ADMIN.name()));
 
         List<Booking> bookings;
         if (isUserAdmin) {
@@ -85,5 +81,25 @@ public class BookingServiceImpl implements BookingService {
         return bookings.stream()
                 .map(bookingMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void deleteBooking(Long bookingId, Long currentUserId, Set<String> roles) {
+        logger.info("Attempting to delete booking {} by user {}", bookingId, currentUserId);
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
+
+        boolean isUserAdmin = roles.stream().anyMatch(role -> role.equals(ERole.ROLE_ADMIN.name()));
+        boolean isOwner = Objects.equals(booking.getUser().getId(), currentUserId);
+
+        if (isUserAdmin || isOwner) {
+            bookingRepository.delete(booking);
+            logger.info("Booking {} deleted successfully by user {}", bookingId, currentUserId);
+        } else {
+            logger.warn("User {} is not authorized to delete booking {}", currentUserId, bookingId);
+            throw new AccessDeniedException("You are not authorized to delete this booking.");
+        }
     }
 }

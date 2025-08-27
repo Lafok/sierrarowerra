@@ -11,4 +11,6 @@ public interface BookingService {
     Booking createBooking(BookingRequestDto bookingRequest, Long userId);
 
     List<BookingResponseDto> findAll(Long userId, Set<String> roles);
+
+    void deleteBooking(Long bookingId, Long userId, Set<String> roles);
 }

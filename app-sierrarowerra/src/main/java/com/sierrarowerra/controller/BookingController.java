@@ -4,6 +4,7 @@ import com.sierrarowerra.model.Booking;
 import com.sierrarowerra.model.dto.BookingRequestDto;
 import com.sierrarowerra.model.dto.BookingResponseDto;
 import com.sierrarowerra.services.BookingService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -28,7 +29,7 @@ public class BookingController {
         Booking newBooking = bookingService.createBooking(bookingRequest);
         return new ResponseEntity<>(newBooking, HttpStatus.CREATED);
     }
-
+    @SecurityRequirements
     @GetMapping
     public List<BookingResponseDto> getAllBookings() {
         return bookingService.findAll();

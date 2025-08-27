@@ -11,6 +11,7 @@ import com.sierrarowerra.model.dto.payload.MessageResponse;
 import com.sierrarowerra.model.dto.payload.SignupRequest;
 import com.sierrarowerra.security.jwt.JwtUtils;
 import com.sierrarowerra.security.services.UserDetailsImpl;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +20,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -50,6 +49,7 @@ public class AuthController {
     JwtUtils jwtUtils;
 
     @PostMapping("/signin")
+    @SecurityRequirements
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
 
         Authentication authentication = authenticationManager.authenticate(
@@ -71,6 +71,7 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
+    @SecurityRequirements
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
         if (userRepository.existsByUsername(signUpRequest.getUsername())) {
             return ResponseEntity

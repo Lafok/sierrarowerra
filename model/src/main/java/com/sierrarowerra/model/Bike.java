@@ -27,5 +27,6 @@ public class Bike {
     @Enumerated(EnumType.STRING)
     private BikeType type;
 
-    private boolean isAvailable = true;
+    @Enumerated(EnumType.STRING)
+    private BikeStatus status;
 }

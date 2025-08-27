@@ -3,7 +3,9 @@ package com.sierrarowerra.services.impl;
 import com.sierrarowerra.domain.BikeRepository;
 import com.sierrarowerra.domain.BookingRepository;
 import com.sierrarowerra.model.Bike;
+import com.sierrarowerra.model.BikeStatus;
 import com.sierrarowerra.model.dto.BikeRequestDto;
+import com.sierrarowerra.model.dto.BikeStatusUpdateRequestDto;
 import com.sierrarowerra.services.BikeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -40,7 +42,7 @@ public class BikeServiceImpl implements BikeService {
         Bike newBike = new Bike();
         newBike.setName(bikeRequest.getName());
         newBike.setType(bikeRequest.getType());
-        newBike.setAvailable(true); // By default, a new bike is available
+        newBike.setStatus(BikeStatus.AVAILABLE); // Set default status on creation
         return bikeRepository.save(newBike);
     }
 
@@ -51,6 +53,16 @@ public class BikeServiceImpl implements BikeService {
                 .map(bike -> {
                     bike.setName(bikeRequest.getName());
                     bike.setType(bikeRequest.getType());
+                    return bikeRepository.save(bike);
+                });
+    }
+
+    @Override
+    @Transactional
+    public Optional<Bike> updateBikeStatus(Long id, BikeStatusUpdateRequestDto statusRequest) {
+        return bikeRepository.findById(id)
+                .map(bike -> {
+                    bike.setStatus(statusRequest.getStatus());
                     return bikeRepository.save(bike);
                 });
     }

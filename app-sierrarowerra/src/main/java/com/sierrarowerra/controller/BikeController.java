@@ -2,6 +2,7 @@ package com.sierrarowerra.controller;
 
 import com.sierrarowerra.model.Bike;
 import com.sierrarowerra.model.dto.BikeRequestDto;
+import com.sierrarowerra.model.dto.BikeStatusUpdateRequestDto;
 import com.sierrarowerra.services.BikeService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -17,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -70,6 +72,15 @@ public class BikeController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Bike> updateBike(@PathVariable Long id, @Valid @RequestBody BikeRequestDto bikeRequest) {
         return bikeService.updateBike(id, bikeRequest)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "Update the status of a bike (Admin only)")
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Bike> updateBikeStatus(@PathVariable Long id, @Valid @RequestBody BikeStatusUpdateRequestDto statusRequest) {
+        return bikeService.updateBikeStatus(id, statusRequest)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

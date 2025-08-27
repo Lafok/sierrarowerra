@@ -4,6 +4,7 @@ import com.sierrarowerra.domain.BikeRepository;
 import com.sierrarowerra.domain.BookingRepository;
 import com.sierrarowerra.domain.UserRepository;
 import com.sierrarowerra.model.Bike;
+import com.sierrarowerra.model.BikeStatus;
 import com.sierrarowerra.model.Booking;
 import com.sierrarowerra.model.ERole;
 import com.sierrarowerra.model.User;
@@ -40,6 +41,11 @@ public class BookingServiceImpl implements BookingService {
     public Booking createBooking(BookingRequestDto request, Long userId) {
         Bike bike = bikeRepository.findById(request.getBikeId())
                 .orElseThrow(() -> new IllegalArgumentException("Bike not found with id: " + request.getBikeId()));
+
+        // Check if the bike is available for booking
+        if (bike.getStatus() != BikeStatus.AVAILABLE) {
+            throw new IllegalStateException("Bike is not available for booking. Current status: " + bike.getStatus());
+        }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));

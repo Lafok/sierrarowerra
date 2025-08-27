@@ -2,6 +2,7 @@ package com.sierrarowerra.services;
 
 import com.sierrarowerra.model.Bike;
 import com.sierrarowerra.model.dto.BikeRequestDto;
+import com.sierrarowerra.model.dto.BikeStatusUpdateRequestDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -17,6 +18,8 @@ public interface BikeService {
     Bike createBike(BikeRequestDto bikeRequest);
 
     Optional<Bike> updateBike(Long id, BikeRequestDto bikeRequest);
+
+    Optional<Bike> updateBikeStatus(Long id, BikeStatusUpdateRequestDto statusRequest);
 
     void deleteBike(Long id);
 

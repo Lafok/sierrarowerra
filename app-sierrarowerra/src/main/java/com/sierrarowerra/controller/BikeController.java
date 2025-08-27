@@ -3,6 +3,7 @@ package com.sierrarowerra.controller;
 import com.sierrarowerra.model.Bike;
 import com.sierrarowerra.model.dto.BikeRequestDto;
 import com.sierrarowerra.services.BikeService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -34,11 +35,21 @@ public class BikeController {
 
     private final BikeService bikeService;
 
+    @Operation(summary = "Get a paginated list of all bikes")
     @GetMapping
     public Page<Bike> getAllBikes(@ParameterObject @PageableDefault(sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
         return bikeService.findAll(pageable);
     }
 
+    @Operation(summary = "Get a specific bike by its ID")
+    @GetMapping("/{id}")
+    public ResponseEntity<Bike> getBikeById(@PathVariable Long id) {
+        return bikeService.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "Find available bikes for a given date range")
     @GetMapping("/available")
     public List<Bike> getAvailableBikes(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -46,6 +57,7 @@ public class BikeController {
         return bikeService.findAvailableBikes(startDate, endDate);
     }
 
+    @Operation(summary = "Create a new bike (Admin only)")
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Bike> createBike(@Valid @RequestBody BikeRequestDto bikeRequest) {
@@ -53,6 +65,7 @@ public class BikeController {
         return new ResponseEntity<>(newBike, HttpStatus.CREATED);
     }
 
+    @Operation(summary = "Update an existing bike (Admin only)")
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Bike> updateBike(@PathVariable Long id, @Valid @RequestBody BikeRequestDto bikeRequest) {
@@ -61,6 +74,7 @@ public class BikeController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Delete a bike (Admin only)")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteBike(@PathVariable Long id) {

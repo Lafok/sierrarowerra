@@ -11,6 +11,7 @@ import com.sierrarowerra.model.dto.payload.MessageResponse;
 import com.sierrarowerra.model.dto.payload.SignupRequest;
 import com.sierrarowerra.security.jwt.JwtUtils;
 import com.sierrarowerra.security.services.UserDetailsImpl;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +49,7 @@ public class AuthController {
     @Autowired
     JwtUtils jwtUtils;
 
+    @Operation(summary = "Authenticate user and get JWT token")
     @PostMapping("/signin")
     @SecurityRequirements
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
@@ -70,6 +72,7 @@ public class AuthController {
                 roles));
     }
 
+    @Operation(summary = "Register a new user")
     @PostMapping("/signup")
     @SecurityRequirements
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {

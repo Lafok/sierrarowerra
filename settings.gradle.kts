@@ -4,5 +4,6 @@ include(
     "app-sierrarowerra",
     "model",
     "domain",
-    "services"
+    "services",
+    "config"
 )

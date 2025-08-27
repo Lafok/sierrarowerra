@@ -12,6 +12,8 @@ import java.util.Optional;
 public interface BikeService {
     Page<Bike> findAll(Pageable pageable);
 
+    Optional<Bike> findById(Long id);
+
     Bike createBike(BikeRequestDto bikeRequest);
 
     Optional<Bike> updateBike(Long id, BikeRequestDto bikeRequest);

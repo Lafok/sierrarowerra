@@ -3,10 +3,12 @@ plugins {
 }
 
 dependencies {
+    implementation project(":config")
     implementation project(":services")
     implementation project(":domain")
     implementation project(":model")
 
+    // Explicitly add web starter back to the main application module
     implementation libs.spring.boot.starter.web
     implementation libs.spring.boot.starter.security
     implementation libs.spring.boot.starter.data.jpa

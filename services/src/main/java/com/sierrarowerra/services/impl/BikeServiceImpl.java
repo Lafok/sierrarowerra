@@ -29,6 +29,12 @@ public class BikeServiceImpl implements BikeService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Optional<Bike> findById(Long id) {
+        return bikeRepository.findById(id);
+    }
+
+    @Override
     @Transactional
     public Bike createBike(BikeRequestDto bikeRequest) {
         Bike newBike = new Bike();

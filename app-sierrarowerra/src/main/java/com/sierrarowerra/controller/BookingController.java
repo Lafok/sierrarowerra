@@ -5,12 +5,14 @@ import com.sierrarowerra.model.dto.BookingRequestDto;
 import com.sierrarowerra.model.dto.BookingResponseDto;
 import com.sierrarowerra.security.services.UserDetailsImpl;
 import com.sierrarowerra.services.BookingService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.GrantedAuthority;
@@ -23,7 +25,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -33,8 +34,8 @@ import java.util.stream.Collectors;
 public class BookingController {
 
     private final BookingService bookingService;
-    private final List<String> validSortFields = List.of("id", "bookingStartDate", "bookingEndDate");
 
+    @Operation(summary = "Create a new booking for a bike")
     @PostMapping
     public ResponseEntity<Booking> createBooking(@Valid @RequestBody BookingRequestDto bookingRequest,
                                                  @AuthenticationPrincipal UserDetailsImpl currentUser) {
@@ -42,26 +43,17 @@ public class BookingController {
         return new ResponseEntity<>(newBooking, HttpStatus.CREATED);
     }
 
+    @Operation(summary = "Get a paginated list of bookings (for admins: all bookings; for users: their own bookings)")
     @GetMapping
-    public Page<BookingResponseDto> getAllBookings(@AuthenticationPrincipal UserDetailsImpl currentUser, Pageable pageable) {
-        // Sanitize sort parameters to prevent PropertyReferenceException
-        Sort sanitizedSort = Sort.by(pageable.getSort().stream()
-                .filter(order -> validSortFields.contains(order.getProperty()))
-                .collect(Collectors.toList()));
-
-        // If no valid sort fields are provided (or if the only one was 'string'), use a default
-        if (sanitizedSort.isEmpty()) {
-            sanitizedSort = Sort.by(Sort.Direction.DESC, "bookingStartDate");
-        }
-
-        Pageable effectivePageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sanitizedSort);
-
+    public Page<BookingResponseDto> getAllBookings(@AuthenticationPrincipal UserDetailsImpl currentUser,
+                                                   @ParameterObject @PageableDefault(sort = "bookingStartDate", direction = Sort.Direction.DESC) Pageable pageable) {
         Set<String> roles = currentUser.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toSet());
-        return bookingService.findAll(currentUser.getId(), roles, effectivePageable);
+        return bookingService.findAll(currentUser.getId(), roles, pageable);
     }
 
+    @Operation(summary = "Delete a booking (admins can delete any, users can only delete their own)")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBooking(@PathVariable Long id, @AuthenticationPrincipal UserDetailsImpl currentUser) {
         Set<String> roles = currentUser.getAuthorities().stream()

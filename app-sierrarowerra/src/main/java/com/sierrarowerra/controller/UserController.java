@@ -6,6 +6,7 @@ import com.sierrarowerra.model.dto.payload.UserRolesRequestDto;
 import com.sierrarowerra.security.services.UserDetailsImpl;
 import com.sierrarowerra.services.UserService;
 import com.sierrarowerra.services.mapper.UserMapper;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -32,6 +33,7 @@ public class UserController {
     private final UserService userService;
     private final UserMapper userMapper;
 
+    @Operation(summary = "Get current user's profile")
     @GetMapping("/me")
     public ResponseEntity<UserDto> getCurrentUser(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         return userService.findById(currentUser.getId())
@@ -40,12 +42,14 @@ public class UserController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Get a paginated list of all users (Admin only)")
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public Page<UserDto> getAllUsers(@ParameterObject @PageableDefault(sort = "username", direction = Sort.Direction.ASC) Pageable pageable) {
         return userService.findAll(pageable).map(userMapper::toDto);
     }
 
+    @Operation(summary = "Get a specific user by their ID (Admin only)")
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
@@ -55,6 +59,7 @@ public class UserController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Update a user's roles (Admin only)")
     @PutMapping("/{id}/roles")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDto> updateUserRoles(@PathVariable Long id, @Valid @RequestBody UserRolesRequestDto rolesRequest) {
@@ -62,6 +67,7 @@ public class UserController {
         return ResponseEntity.ok(userMapper.toDto(updatedUser));
     }
 
+    @Operation(summary = "Delete a user (Admin only)")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {

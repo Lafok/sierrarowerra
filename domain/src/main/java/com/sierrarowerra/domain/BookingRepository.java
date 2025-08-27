@@ -1,6 +1,8 @@
 package com.sierrarowerra.domain;
 
 import com.sierrarowerra.model.Booking;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,7 +19,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     boolean existsByBikeId(Long bikeId);
 
-    List<Booking> findByUserId(Long userId);
+    Page<Booking> findByUserId(Long userId, Pageable pageable);
 
     @Query("SELECT DISTINCT b.bike.id FROM Booking b WHERE b.bookingStartDate < :endDate AND b.bookingEndDate > :startDate")
     List<Long> findBookedBikeIds(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);

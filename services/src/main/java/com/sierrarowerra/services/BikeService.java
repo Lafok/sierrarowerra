@@ -2,13 +2,15 @@ package com.sierrarowerra.services;
 
 import com.sierrarowerra.model.Bike;
 import com.sierrarowerra.model.dto.BikeRequestDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 public interface BikeService {
-    List<Bike> findAll();
+    Page<Bike> findAll(Pageable pageable);
 
     Bike createBike(BikeRequestDto bikeRequest);
 

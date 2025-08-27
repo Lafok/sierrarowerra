@@ -14,6 +14,8 @@ import com.sierrarowerra.services.mapper.BookingMapper;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -64,23 +65,21 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<BookingResponseDto> findAll(Long userId, Set<String> roles) {
-        logger.info("Checking bookings for userId: {}. Roles: {}", userId, roles);
+    public Page<BookingResponseDto> findAll(Long userId, Set<String> roles, Pageable pageable) {
+        logger.info("Checking bookings for userId: {}. Roles: {}. Pageable: {}", userId, roles, pageable);
 
         boolean isUserAdmin = roles.stream().anyMatch(role -> role.equals(ERole.ROLE_ADMIN.name()));
 
-        List<Booking> bookings;
+        Page<Booking> bookingsPage;
         if (isUserAdmin) {
             logger.warn("User is ADMIN. Fetching all bookings.");
-            bookings = bookingRepository.findAll();
+            bookingsPage = bookingRepository.findAll(pageable);
         } else {
             logger.info("User is a regular user. Fetching bookings for userId: {}.", userId);
-            bookings = bookingRepository.findByUserId(userId);
+            bookingsPage = bookingRepository.findByUserId(userId, pageable);
         }
 
-        return bookings.stream()
-                .map(bookingMapper::toDto)
-                .collect(Collectors.toList());
+        return bookingsPage.map(bookingMapper::toDto);
     }
 
     @Override

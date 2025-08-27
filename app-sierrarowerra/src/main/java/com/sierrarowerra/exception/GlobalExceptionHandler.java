@@ -1,5 +1,6 @@
 package com.sierrarowerra.exception;
 
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -35,6 +36,14 @@ public class GlobalExceptionHandler {
     public Map<String, String> handleAccessDenied(AccessDeniedException ex) {
         Map<String, String> error = new HashMap<>();
         error.put("error", ex.getMessage());
+        return error;
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(PropertyReferenceException.class)
+    public Map<String, String> handlePropertyReferenceException(PropertyReferenceException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "Invalid property for sorting: " + ex.getPropertyName());
         return error;
     }
 }

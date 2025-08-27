@@ -7,6 +7,10 @@ import com.sierrarowerra.security.services.UserDetailsImpl;
 import com.sierrarowerra.services.BookingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.GrantedAuthority;
@@ -29,6 +33,7 @@ import java.util.stream.Collectors;
 public class BookingController {
 
     private final BookingService bookingService;
+    private final List<String> validSortFields = List.of("id", "bookingStartDate", "bookingEndDate");
 
     @PostMapping
     public ResponseEntity<Booking> createBooking(@Valid @RequestBody BookingRequestDto bookingRequest,
@@ -38,11 +43,23 @@ public class BookingController {
     }
 
     @GetMapping
-    public List<BookingResponseDto> getAllBookings(@AuthenticationPrincipal UserDetailsImpl currentUser) {
+    public Page<BookingResponseDto> getAllBookings(@AuthenticationPrincipal UserDetailsImpl currentUser, Pageable pageable) {
+        // Sanitize sort parameters to prevent PropertyReferenceException
+        Sort sanitizedSort = Sort.by(pageable.getSort().stream()
+                .filter(order -> validSortFields.contains(order.getProperty()))
+                .collect(Collectors.toList()));
+
+        // If no valid sort fields are provided (or if the only one was 'string'), use a default
+        if (sanitizedSort.isEmpty()) {
+            sanitizedSort = Sort.by(Sort.Direction.DESC, "bookingStartDate");
+        }
+
+        Pageable effectivePageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sanitizedSort);
+
         Set<String> roles = currentUser.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toSet());
-        return bookingService.findAll(currentUser.getId(), roles);
+        return bookingService.findAll(currentUser.getId(), roles, effectivePageable);
     }
 
     @DeleteMapping("/{id}")

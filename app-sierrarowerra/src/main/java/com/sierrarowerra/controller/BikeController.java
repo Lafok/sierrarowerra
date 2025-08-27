@@ -5,6 +5,11 @@ import com.sierrarowerra.model.dto.BikeRequestDto;
 import com.sierrarowerra.services.BikeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,8 +35,8 @@ public class BikeController {
     private final BikeService bikeService;
 
     @GetMapping
-    public List<Bike> getAllBikes() {
-        return bikeService.findAll();
+    public Page<Bike> getAllBikes(@ParameterObject @PageableDefault(sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
+        return bikeService.findAll(pageable);
     }
 
     @GetMapping("/available")

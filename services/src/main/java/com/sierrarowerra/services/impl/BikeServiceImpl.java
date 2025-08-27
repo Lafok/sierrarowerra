@@ -6,11 +6,12 @@ import com.sierrarowerra.model.Bike;
 import com.sierrarowerra.model.dto.BikeRequestDto;
 import com.sierrarowerra.services.BikeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,8 +24,8 @@ public class BikeServiceImpl implements BikeService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Bike> findAll() {
-        return bikeRepository.findAll();
+    public Page<Bike> findAll(Pageable pageable) {
+        return bikeRepository.findAll(pageable);
     }
 
     @Override

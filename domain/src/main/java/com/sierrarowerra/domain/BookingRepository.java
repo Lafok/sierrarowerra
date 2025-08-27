@@ -18,4 +18,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     boolean existsByBikeId(Long bikeId);
 
     List<Booking> findByUserId(Long userId);
+
+    @Query("SELECT DISTINCT b.bike.id FROM Booking b WHERE b.bookingStartDate < :endDate AND b.bookingEndDate > :startDate")
+    List<Long> findBookedBikeIds(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 }

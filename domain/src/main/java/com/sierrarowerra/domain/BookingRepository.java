@@ -19,6 +19,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     boolean existsByBikeId(Long bikeId);
 
+    boolean existsByUserId(Long userId);
+
     Page<Booking> findByUserId(Long userId, Pageable pageable);
 
     @Query("SELECT DISTINCT b.bike.id FROM Booking b WHERE b.bookingStartDate < :endDate AND b.bookingEndDate > :startDate")

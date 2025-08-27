@@ -20,4 +20,12 @@ public class GlobalExceptionHandler {
                 errors.put(error.getField(), error.getDefaultMessage()));
         return errors;
     }
+
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(IllegalStateException.class)
+    public Map<String, String> handleConflict(IllegalStateException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", ex.getMessage());
+        return error;
+    }
 }

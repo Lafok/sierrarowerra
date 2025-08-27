@@ -1,6 +1,7 @@
 package com.sierrarowerra.services.impl;
 
 import com.sierrarowerra.domain.BikeRepository;
+import com.sierrarowerra.domain.BookingRepository;
 import com.sierrarowerra.model.Bike;
 import com.sierrarowerra.model.dto.BikeRequestDto;
 import com.sierrarowerra.services.BikeService;
@@ -16,6 +17,7 @@ import java.util.Optional;
 public class BikeServiceImpl implements BikeService {
 
     private final BikeRepository bikeRepository;
+    private final BookingRepository bookingRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -47,6 +49,9 @@ public class BikeServiceImpl implements BikeService {
     @Override
     @Transactional
     public void deleteBike(Long id) {
+        if (bookingRepository.existsByBikeId(id)) {
+            throw new IllegalStateException("Cannot delete a bike with associated bookings.");
+        }
         bikeRepository.deleteById(id);
     }
 }

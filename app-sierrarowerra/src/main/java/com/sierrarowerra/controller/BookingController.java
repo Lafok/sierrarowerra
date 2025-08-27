@@ -29,7 +29,6 @@ public class BookingController {
         Booking newBooking = bookingService.createBooking(bookingRequest);
         return new ResponseEntity<>(newBooking, HttpStatus.CREATED);
     }
-    @SecurityRequirements
     @GetMapping
     public List<BookingResponseDto> getAllBookings() {
         return bookingService.findAll();

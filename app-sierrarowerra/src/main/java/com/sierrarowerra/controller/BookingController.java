@@ -43,7 +43,7 @@ public class BookingController {
         return new ResponseEntity<>(newBooking, HttpStatus.CREATED);
     }
 
-    @Operation(summary = "Get a paginated list of bookings (for admins: all bookings; for users: their own bookings)")
+    @Operation(summary = "Get a paginated list of active bookings (for admins: all; for users: their own)")
     @GetMapping
     public Page<BookingResponseDto> getAllBookings(@AuthenticationPrincipal UserDetailsImpl currentUser,
                                                    @ParameterObject @PageableDefault(sort = "bookingStartDate", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -51,6 +51,27 @@ public class BookingController {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toSet());
         return bookingService.findAll(currentUser.getId(), roles, pageable);
+    }
+
+    @Operation(summary = "Get a specific active booking by its ID (admins can see any, users can only see their own)")
+    @GetMapping("/{id}")
+    public ResponseEntity<BookingResponseDto> getBookingById(@PathVariable Long id, @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        Set<String> roles = currentUser.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toSet());
+        return bookingService.findBookingById(id, currentUser.getId(), roles)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "Get a paginated list of past bookings (booking history)")
+    @GetMapping("/history")
+    public Page<BookingResponseDto> getBookingHistory(@AuthenticationPrincipal UserDetailsImpl currentUser,
+                                                      @ParameterObject @PageableDefault(sort = "bookingEndDate", direction = Sort.Direction.DESC) Pageable pageable) {
+        Set<String> roles = currentUser.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toSet());
+        return bookingService.getBookingHistory(currentUser.getId(), roles, pageable);
     }
 
     @Operation(summary = "Delete a booking (admins can delete any, users can only delete their own)")

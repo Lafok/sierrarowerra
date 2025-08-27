@@ -1,13 +1,10 @@
 package com.sierrarowerra.services.impl;
 
 import com.sierrarowerra.domain.BikeRepository;
+import com.sierrarowerra.domain.BookingHistoryRepository;
 import com.sierrarowerra.domain.BookingRepository;
 import com.sierrarowerra.domain.UserRepository;
-import com.sierrarowerra.model.Bike;
-import com.sierrarowerra.model.BikeStatus;
-import com.sierrarowerra.model.Booking;
-import com.sierrarowerra.model.ERole;
-import com.sierrarowerra.model.User;
+import com.sierrarowerra.model.*;
 import com.sierrarowerra.model.dto.BookingRequestDto;
 import com.sierrarowerra.model.dto.BookingResponseDto;
 import com.sierrarowerra.services.BookingService;
@@ -23,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -32,6 +30,7 @@ public class BookingServiceImpl implements BookingService {
     private static final Logger logger = LoggerFactory.getLogger(BookingServiceImpl.class);
 
     private final BookingRepository bookingRepository;
+    private final BookingHistoryRepository bookingHistoryRepository;
     private final BikeRepository bikeRepository;
     private final UserRepository userRepository;
     private final BookingMapper bookingMapper;
@@ -42,7 +41,6 @@ public class BookingServiceImpl implements BookingService {
         Bike bike = bikeRepository.findById(request.getBikeId())
                 .orElseThrow(() -> new IllegalArgumentException("Bike not found with id: " + request.getBikeId()));
 
-        // Check if the bike is available for booking
         if (bike.getStatus() != BikeStatus.AVAILABLE) {
             throw new IllegalStateException("Bike is not available for booking. Current status: " + bike.getStatus());
         }
@@ -72,27 +70,37 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional(readOnly = true)
     public Page<BookingResponseDto> findAll(Long userId, Set<String> roles, Pageable pageable) {
-        logger.info("Checking bookings for userId: {}. Roles: {}. Pageable: {}", userId, roles, pageable);
-
+        logger.info("Checking active bookings for userId: {}. Roles: {}. Pageable: {}", userId, roles, pageable);
         boolean isUserAdmin = roles.stream().anyMatch(role -> role.equals(ERole.ROLE_ADMIN.name()));
 
         Page<Booking> bookingsPage;
         if (isUserAdmin) {
-            logger.warn("User is ADMIN. Fetching all bookings.");
             bookingsPage = bookingRepository.findAll(pageable);
         } else {
-            logger.info("User is a regular user. Fetching bookings for userId: {}.", userId);
             bookingsPage = bookingRepository.findByUserId(userId, pageable);
         }
-
         return bookingsPage.map(bookingMapper::toDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<BookingResponseDto> findBookingById(Long bookingId, Long currentUserId, Set<String> roles) {
+        return bookingRepository.findById(bookingId)
+                .map(booking -> {
+                    boolean isUserAdmin = roles.stream().anyMatch(role -> role.equals(ERole.ROLE_ADMIN.name()));
+                    boolean isOwner = Objects.equals(booking.getUser().getId(), currentUserId);
+
+                    if (isUserAdmin || isOwner) {
+                        return bookingMapper.toDto(booking);
+                    } else {
+                        throw new AccessDeniedException("You are not authorized to view this booking.");
+                    }
+                });
     }
 
     @Override
     @Transactional
     public void deleteBooking(Long bookingId, Long currentUserId, Set<String> roles) {
-        logger.info("Attempting to delete booking {} by user {}", bookingId, currentUserId);
-
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
 
@@ -101,10 +109,23 @@ public class BookingServiceImpl implements BookingService {
 
         if (isUserAdmin || isOwner) {
             bookingRepository.delete(booking);
-            logger.info("Booking {} deleted successfully by user {}", bookingId, currentUserId);
         } else {
-            logger.warn("User {} is not authorized to delete booking {}", currentUserId, bookingId);
             throw new AccessDeniedException("You are not authorized to delete this booking.");
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<BookingResponseDto> getBookingHistory(Long userId, Set<String> roles, Pageable pageable) {
+        logger.info("Checking booking history for userId: {}. Roles: {}. Pageable: {}", userId, roles, pageable);
+        boolean isUserAdmin = roles.stream().anyMatch(role -> role.equals(ERole.ROLE_ADMIN.name()));
+
+        Page<BookingHistory> historyPage;
+        if (isUserAdmin) {
+            historyPage = bookingHistoryRepository.findAll(pageable);
+        } else {
+            historyPage = bookingHistoryRepository.findByUserId(userId, pageable);
+        }
+        return historyPage.map(bookingMapper::toDto);
     }
 }

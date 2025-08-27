@@ -6,7 +6,7 @@ import com.sierrarowerra.model.dto.BookingResponseDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 public interface BookingService {
@@ -14,5 +14,9 @@ public interface BookingService {
 
     Page<BookingResponseDto> findAll(Long userId, Set<String> roles, Pageable pageable);
 
+    Optional<BookingResponseDto> findBookingById(Long bookingId, Long userId, Set<String> roles);
+
     void deleteBooking(Long bookingId, Long userId, Set<String> roles);
+
+    Page<BookingResponseDto> getBookingHistory(Long userId, Set<String> roles, Pageable pageable);
 }

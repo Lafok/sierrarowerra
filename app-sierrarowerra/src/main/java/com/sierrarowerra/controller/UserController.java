@@ -1,10 +1,12 @@
 package com.sierrarowerra.controller;
 
 import com.sierrarowerra.model.User;
+import com.sierrarowerra.model.dto.PageDto;
 import com.sierrarowerra.model.dto.UserDto;
 import com.sierrarowerra.model.dto.payload.UserRolesRequestDto;
 import com.sierrarowerra.security.services.UserDetailsImpl;
 import com.sierrarowerra.services.UserService;
+import com.sierrarowerra.services.mapper.PageMapper;
 import com.sierrarowerra.services.mapper.UserMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -17,13 +19,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -32,6 +28,7 @@ public class UserController {
 
     private final UserService userService;
     private final UserMapper userMapper;
+    private final PageMapper pageMapper;
 
     @Operation(summary = "Get current user's profile")
     @GetMapping("/me")
@@ -45,8 +42,9 @@ public class UserController {
     @Operation(summary = "Get a paginated list of all users (Admin only)")
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public Page<UserDto> getAllUsers(@ParameterObject @PageableDefault(sort = "username", direction = Sort.Direction.ASC) Pageable pageable) {
-        return userService.findAll(pageable).map(userMapper::toDto);
+    public PageDto<UserDto> getAllUsers(@ParameterObject @PageableDefault(sort = "username", direction = Sort.Direction.ASC) Pageable pageable) {
+        Page<User> userPage = userService.findAll(pageable);
+        return pageMapper.toDto(userPage, userMapper::toDto);
     }
 
     @Operation(summary = "Get a specific user by their ID (Admin only)")

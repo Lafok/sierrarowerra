@@ -1,0 +1,7 @@
+version: 2
+authtoken: 31AFHeJ3JA6VtcBb4flrSUMeD15_61Czda7Wt8Y8pe4zqhJdf
+tunnels:
+  backend:
+    proto: http
+    addr: host.docker.internal:8080
+    hostname: dashing-sawfly-stirring.ngrok-free.app

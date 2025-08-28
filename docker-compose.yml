@@ -1,13 +1,25 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: sierrarowerra-postgres-db
+    container_name: sierrarowerra_postgres
     ports:
-      #PORT 5433 TO CONNECT!!!
       - "5433:5432"
     environment:
-      - POSTGRES_DB=sierrarowerra
-      - POSTGRES_USER=sierrarowerra_user
-      - POSTGRES_PASSWORD=123QWElkjasdA412
+      POSTGRES_DB: sierrarowerra
+      POSTGRES_USER: sierrarowerra_user
+      POSTGRES_PASSWORD: 123QWElkjasdA412
+    volumes:
+      - postgres_data_sierrarowerra:/var/lib/postgresql/data
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: sierrarowerra_ngrok
+    restart: always
+    command: start --all --config /etc/ngrok.yml
+    volumes:
+      - ./ngrok.yml:/etc/ngrok.yml
+    ports:
+      - "4041:4040"
+
+volumes:
+  postgres_data_sierrarowerra:

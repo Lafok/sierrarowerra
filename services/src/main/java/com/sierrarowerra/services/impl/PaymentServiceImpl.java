@@ -3,10 +3,14 @@ package com.sierrarowerra.services.impl;
 import com.sierrarowerra.domain.BookingRepository;
 import com.sierrarowerra.domain.PaymentRepository;
 import com.sierrarowerra.model.*;
+import com.sierrarowerra.model.dto.PaymentDto;
 import com.sierrarowerra.services.PaymentService;
+import com.sierrarowerra.services.mapper.PaymentMapper;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +25,8 @@ public class PaymentServiceImpl implements PaymentService {
     private static final Logger logger = LoggerFactory.getLogger(PaymentServiceImpl.class);
 
     private final PaymentRepository paymentRepository;
-    private final BookingRepository bookingRepository; // We need this to get the booking details
+    private final BookingRepository bookingRepository;
+    private final PaymentMapper paymentMapper;
 
     @Override
     @Transactional
@@ -49,16 +54,32 @@ public class PaymentServiceImpl implements PaymentService {
         // Simulate payment processing
         payment.setStatus(PaymentStatus.COMPLETED);
 
-        // Update bike status to RENTED
         Bike bike = booking.getBike();
         bike.setStatus(BikeStatus.RENTED);
-
-        // Note: We don't need to explicitly save the bike, as it's managed by Hibernate
-        // and will be updated within the transaction.
 
         Payment savedPayment = paymentRepository.save(payment);
         logger.info("Payment for booking {} successfully COMPLETED. Bike {} status set to RENTED.", bookingId, bike.getId());
 
         return savedPayment;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PaymentDto> findPaymentsForCurrentUser(Long userId, Set<String> roles, Pageable pageable) {
+        boolean isUserAdmin = roles.stream().anyMatch(role -> role.equals(ERole.ROLE_ADMIN.name()));
+
+        Page<Payment> paymentPage;
+        if (isUserAdmin) {
+            paymentPage = paymentRepository.findAll(pageable);
+        } else {
+            paymentPage = paymentRepository.findByBooking_User_Id(userId, pageable);
+        }
+        return paymentPage.map(paymentMapper::toDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PaymentDto> findPaymentsByUserId(Long userId, Pageable pageable) {
+        return paymentRepository.findByBooking_User_Id(userId, pageable).map(paymentMapper::toDto);
     }
 }

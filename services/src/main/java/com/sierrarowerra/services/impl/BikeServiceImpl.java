@@ -2,8 +2,10 @@ package com.sierrarowerra.services.impl;
 
 import com.sierrarowerra.domain.BikeRepository;
 import com.sierrarowerra.domain.BookingRepository;
+import com.sierrarowerra.domain.TariffRepository;
 import com.sierrarowerra.model.Bike;
 import com.sierrarowerra.model.BikeStatus;
+import com.sierrarowerra.model.Tariff;
 import com.sierrarowerra.model.dto.BikeRequestDto;
 import com.sierrarowerra.model.dto.BikeStatusUpdateRequestDto;
 import com.sierrarowerra.services.BikeService;
@@ -23,6 +25,7 @@ public class BikeServiceImpl implements BikeService {
 
     private final BikeRepository bikeRepository;
     private final BookingRepository bookingRepository;
+    private final TariffRepository tariffRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -39,20 +42,28 @@ public class BikeServiceImpl implements BikeService {
     @Override
     @Transactional
     public Bike createBike(BikeRequestDto bikeRequest) {
+        Tariff tariff = tariffRepository.findById(bikeRequest.getTariffId())
+                .orElseThrow(() -> new IllegalArgumentException("Tariff not found with id: " + bikeRequest.getTariffId()));
+
         Bike newBike = new Bike();
         newBike.setName(bikeRequest.getName());
         newBike.setType(bikeRequest.getType());
-        newBike.setStatus(BikeStatus.AVAILABLE); // Set default status on creation
+        newBike.setStatus(BikeStatus.AVAILABLE);
+        newBike.setTariff(tariff);
         return bikeRepository.save(newBike);
     }
 
     @Override
     @Transactional
     public Optional<Bike> updateBike(Long id, BikeRequestDto bikeRequest) {
+        Tariff tariff = tariffRepository.findById(bikeRequest.getTariffId())
+                .orElseThrow(() -> new IllegalArgumentException("Tariff not found with id: " + bikeRequest.getTariffId()));
+
         return bikeRepository.findById(id)
                 .map(bike -> {
                     bike.setName(bikeRequest.getName());
                     bike.setType(bikeRequest.getType());
+                    bike.setTariff(tariff);
                     return bikeRepository.save(bike);
                 });
     }

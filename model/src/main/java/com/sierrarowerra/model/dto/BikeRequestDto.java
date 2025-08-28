@@ -13,4 +13,7 @@ public class BikeRequestDto {
 
     @NotNull(message = "Bike type cannot be null")
     private BikeType type;
+
+    @NotNull(message = "Tariff ID cannot be null")
+    private Long tariffId;
 }

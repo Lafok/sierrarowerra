@@ -1,10 +1,12 @@
 package com.sierrarowerra.controller;
 
-import com.sierrarowerra.model.Booking;
+import com.sierrarowerra.model.Payment;
+import com.sierrarowerra.model.dto.BookingCreationResponseDto;
 import com.sierrarowerra.model.dto.BookingRequestDto;
 import com.sierrarowerra.model.dto.BookingResponseDto;
 import com.sierrarowerra.security.services.UserDetailsImpl;
 import com.sierrarowerra.services.BookingService;
+import com.sierrarowerra.services.mapper.PaymentMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,13 +36,19 @@ import java.util.stream.Collectors;
 public class BookingController {
 
     private final BookingService bookingService;
+    private final PaymentMapper paymentMapper;
 
     @Operation(summary = "Create a new booking for a bike")
     @PostMapping
-    public ResponseEntity<Booking> createBooking(@Valid @RequestBody BookingRequestDto bookingRequest,
-                                                 @AuthenticationPrincipal UserDetailsImpl currentUser) {
-        Booking newBooking = bookingService.createBooking(bookingRequest, currentUser.getId());
-        return new ResponseEntity<>(newBooking, HttpStatus.CREATED);
+    public ResponseEntity<BookingCreationResponseDto> createBooking(@Valid @RequestBody BookingRequestDto bookingRequest,
+                                                                    @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        Payment createdPayment = bookingService.createBooking(bookingRequest, currentUser.getId());
+
+        BookingCreationResponseDto responseDto = new BookingCreationResponseDto();
+        responseDto.setBookingId(createdPayment.getBooking().getId());
+        responseDto.setPaymentDetails(paymentMapper.toDto(createdPayment));
+
+        return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 
     @Operation(summary = "Get a paginated list of active bookings (for admins: all; for users: their own)")

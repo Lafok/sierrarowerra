@@ -1,9 +1,6 @@
 package com.sierrarowerra.services.impl;
 
-import com.sierrarowerra.domain.BikeRepository;
-import com.sierrarowerra.domain.BookingHistoryRepository;
-import com.sierrarowerra.domain.BookingRepository;
-import com.sierrarowerra.domain.UserRepository;
+import com.sierrarowerra.domain.*;
 import com.sierrarowerra.model.*;
 import com.sierrarowerra.model.dto.BookingRequestDto;
 import com.sierrarowerra.model.dto.BookingResponseDto;
@@ -18,6 +15,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -33,11 +32,14 @@ public class BookingServiceImpl implements BookingService {
     private final BookingHistoryRepository bookingHistoryRepository;
     private final BikeRepository bikeRepository;
     private final UserRepository userRepository;
+    private final PaymentRepository paymentRepository;
     private final BookingMapper bookingMapper;
 
     @Override
     @Transactional
-    public Booking createBooking(BookingRequestDto request, Long userId) {
+    public Payment createBooking(BookingRequestDto request, Long userId) {
+        logger.info("Creating booking for user {} and bike {}", userId, request.getBikeId());
+
         Bike bike = bikeRepository.findById(request.getBikeId())
                 .orElseThrow(() -> new IllegalArgumentException("Bike not found with id: " + request.getBikeId()));
 
@@ -58,13 +60,37 @@ public class BookingServiceImpl implements BookingService {
             throw new IllegalStateException("Bike is already booked for the selected dates.");
         }
 
+        // --- Payment Calculation Logic ---
+        Tariff tariff = bike.getTariff();
+        long duration;
+        if (tariff.getType() == TariffType.DAILY) {
+            duration = ChronoUnit.DAYS.between(request.getStartDate(), request.getEndDate());
+            if (duration == 0) duration = 1; // Minimum 1 day rental
+        } else { // HOURLY
+            duration = ChronoUnit.HOURS.between(request.getStartDate().atStartOfDay(), request.getEndDate().atStartOfDay());
+            if (duration == 0) duration = 1; // Minimum 1 hour rental
+        }
+
+        BigDecimal totalAmount = tariff.getPrice().multiply(new BigDecimal(duration));
+        logger.info("Calculated payment amount: {} for a duration of {} {}", totalAmount, duration, tariff.getType());
+
+        // --- Create Booking and Payment ---
         Booking newBooking = new Booking();
         newBooking.setBike(bike);
         newBooking.setUser(user);
         newBooking.setBookingStartDate(request.getStartDate());
         newBooking.setBookingEndDate(request.getEndDate());
+        Booking savedBooking = bookingRepository.save(newBooking);
 
-        return bookingRepository.save(newBooking);
+        Payment newPayment = new Payment();
+        newPayment.setBooking(savedBooking);
+        newPayment.setAmount(totalAmount);
+        newPayment.setStatus(PaymentStatus.PENDING);
+        Payment savedPayment = paymentRepository.save(newPayment);
+
+        logger.info("Successfully created booking {} and payment with PENDING status", savedBooking.getId());
+
+        return savedPayment;
     }
 
     @Override

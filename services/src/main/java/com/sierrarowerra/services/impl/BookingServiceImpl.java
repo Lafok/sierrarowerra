@@ -4,6 +4,7 @@ import com.sierrarowerra.domain.*;
 import com.sierrarowerra.model.*;
 import com.sierrarowerra.model.dto.BookingRequestDto;
 import com.sierrarowerra.model.dto.BookingResponseDto;
+import com.sierrarowerra.model.dto.payload.BookingExtensionRequestDto;
 import com.sierrarowerra.services.BookingService;
 import com.sierrarowerra.services.mapper.BookingMapper;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
@@ -60,21 +62,18 @@ public class BookingServiceImpl implements BookingService {
             throw new IllegalStateException("Bike is already booked for the selected dates.");
         }
 
-        // --- Payment Calculation Logic ---
         Tariff tariff = bike.getTariff();
         long duration;
         if (tariff.getType() == TariffType.DAILY) {
             duration = ChronoUnit.DAYS.between(request.getStartDate(), request.getEndDate());
-            if (duration == 0) duration = 1; // Minimum 1 day rental
+            if (duration == 0) duration = 1;
         } else { // HOURLY
             duration = ChronoUnit.HOURS.between(request.getStartDate().atStartOfDay(), request.getEndDate().atStartOfDay());
-            if (duration == 0) duration = 1; // Minimum 1 hour rental
+            if (duration == 0) duration = 1;
         }
 
         BigDecimal totalAmount = tariff.getPrice().multiply(new BigDecimal(duration));
-        logger.info("Calculated payment amount: {} for a duration of {} {}", totalAmount, duration, tariff.getType());
 
-        // --- Create Booking and Payment ---
         Booking newBooking = new Booking();
         newBooking.setBike(bike);
         newBooking.setUser(user);
@@ -86,25 +85,47 @@ public class BookingServiceImpl implements BookingService {
         newPayment.setBooking(savedBooking);
         newPayment.setAmount(totalAmount);
         newPayment.setStatus(PaymentStatus.PENDING);
-        Payment savedPayment = paymentRepository.save(newPayment);
+        return paymentRepository.save(newPayment);
+    }
 
-        logger.info("Successfully created booking {} and payment with PENDING status", savedBooking.getId());
+    @Override
+    @Transactional
+    public Payment extendBooking(Long bookingId, BookingExtensionRequestDto extensionRequest, Long currentUserId, Set<String> roles) {
+        logger.info("Extending booking {} for user {} with new end date {}", bookingId, currentUserId, extensionRequest.getNewEndDate());
 
-        return savedPayment;
+        Booking originalBooking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
+
+        // Authorization Check
+        boolean isUserAdmin = roles.stream().anyMatch(role -> role.equals(ERole.ROLE_ADMIN.name()));
+        boolean isOwner = Objects.equals(originalBooking.getUser().getId(), currentUserId);
+        if (!isUserAdmin && !isOwner) {
+            throw new AccessDeniedException("You are not authorized to extend this booking.");
+        }
+
+        // Validation
+        if (!extensionRequest.getNewEndDate().isAfter(originalBooking.getBookingEndDate())) {
+            throw new IllegalStateException("New end date must be after the current end date.");
+        }
+        if (originalBooking.getBookingEndDate().isBefore(LocalDate.now())) {
+            throw new IllegalStateException("Cannot extend a booking that has already ended.");
+        }
+
+        // Re-use the createBooking logic for the extension period
+        BookingRequestDto extensionDto = new BookingRequestDto();
+        extensionDto.setBikeId(originalBooking.getBike().getId());
+        extensionDto.setStartDate(originalBooking.getBookingEndDate()); // New booking starts when the old one ends
+        extensionDto.setEndDate(extensionRequest.getNewEndDate());
+
+        // The booking is created for the original user
+        return createBooking(extensionDto, originalBooking.getUser().getId());
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<BookingResponseDto> findAll(Long userId, Set<String> roles, Pageable pageable) {
-        logger.info("Checking active bookings for userId: {}. Roles: {}. Pageable: {}", userId, roles, pageable);
         boolean isUserAdmin = roles.stream().anyMatch(role -> role.equals(ERole.ROLE_ADMIN.name()));
-
-        Page<Booking> bookingsPage;
-        if (isUserAdmin) {
-            bookingsPage = bookingRepository.findAll(pageable);
-        } else {
-            bookingsPage = bookingRepository.findByUserId(userId, pageable);
-        }
+        Page<Booking> bookingsPage = isUserAdmin ? bookingRepository.findAll(pageable) : bookingRepository.findByUserId(userId, pageable);
         return bookingsPage.map(bookingMapper::toDto);
     }
 
@@ -115,7 +136,6 @@ public class BookingServiceImpl implements BookingService {
                 .map(booking -> {
                     boolean isUserAdmin = roles.stream().anyMatch(role -> role.equals(ERole.ROLE_ADMIN.name()));
                     boolean isOwner = Objects.equals(booking.getUser().getId(), currentUserId);
-
                     if (isUserAdmin || isOwner) {
                         return bookingMapper.toDto(booking);
                     } else {
@@ -129,10 +149,8 @@ public class BookingServiceImpl implements BookingService {
     public void deleteBooking(Long bookingId, Long currentUserId, Set<String> roles) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
-
         boolean isUserAdmin = roles.stream().anyMatch(role -> role.equals(ERole.ROLE_ADMIN.name()));
         boolean isOwner = Objects.equals(booking.getUser().getId(), currentUserId);
-
         if (isUserAdmin || isOwner) {
             bookingRepository.delete(booking);
         } else {
@@ -143,15 +161,8 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional(readOnly = true)
     public Page<BookingResponseDto> getBookingHistory(Long userId, Set<String> roles, Pageable pageable) {
-        logger.info("Checking booking history for userId: {}. Roles: {}. Pageable: {}", userId, roles, pageable);
         boolean isUserAdmin = roles.stream().anyMatch(role -> role.equals(ERole.ROLE_ADMIN.name()));
-
-        Page<BookingHistory> historyPage;
-        if (isUserAdmin) {
-            historyPage = bookingHistoryRepository.findAll(pageable);
-        } else {
-            historyPage = bookingHistoryRepository.findByUserId(userId, pageable);
-        }
+        Page<BookingHistory> historyPage = isUserAdmin ? bookingHistoryRepository.findAll(pageable) : bookingHistoryRepository.findByUserId(userId, pageable);
         return historyPage.map(bookingMapper::toDto);
     }
 }

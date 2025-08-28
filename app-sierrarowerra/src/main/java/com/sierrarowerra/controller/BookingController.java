@@ -4,6 +4,7 @@ import com.sierrarowerra.model.Payment;
 import com.sierrarowerra.model.dto.BookingCreationResponseDto;
 import com.sierrarowerra.model.dto.BookingRequestDto;
 import com.sierrarowerra.model.dto.BookingResponseDto;
+import com.sierrarowerra.model.dto.payload.BookingExtensionRequestDto;
 import com.sierrarowerra.security.services.UserDetailsImpl;
 import com.sierrarowerra.services.BookingService;
 import com.sierrarowerra.services.mapper.PaymentMapper;
@@ -80,6 +81,24 @@ public class BookingController {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toSet());
         return bookingService.getBookingHistory(currentUser.getId(), roles, pageable);
+    }
+
+    @Operation(summary = "Extend an existing booking")
+    @PostMapping("/{bookingId}/extend")
+    public ResponseEntity<BookingCreationResponseDto> extendBooking(@PathVariable Long bookingId,
+                                                                    @Valid @RequestBody BookingExtensionRequestDto extensionRequest,
+                                                                    @AuthenticationPrincipal UserDetailsImpl currentUser) {
+        Set<String> roles = currentUser.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toSet());
+
+        Payment extensionPayment = bookingService.extendBooking(bookingId, extensionRequest, currentUser.getId(), roles);
+
+        BookingCreationResponseDto responseDto = new BookingCreationResponseDto();
+        responseDto.setBookingId(extensionPayment.getBooking().getId());
+        responseDto.setPaymentDetails(paymentMapper.toDto(extensionPayment));
+
+        return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 
     @Operation(summary = "Delete a booking (admins can delete any, users can only delete their own)")

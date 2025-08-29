@@ -18,6 +18,8 @@ dependencies {
     implementation libs.jjwt.impl
     implementation libs.jjwt.jackson
 
+    implementation libs.stripe.java
+
     runtimeOnly libs.postgresql
 }
 

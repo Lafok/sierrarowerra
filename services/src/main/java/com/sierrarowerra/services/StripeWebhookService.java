@@ -3,6 +3,7 @@ package com.sierrarowerra.services;
 import com.sierrarowerra.domain.BookingRepository;
 import com.sierrarowerra.model.Booking;
 import com.sierrarowerra.model.BookingStatus;
+import com.sierrarowerra.model.PaymentStatus;
 import com.stripe.model.PaymentIntent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +48,7 @@ public class StripeWebhookService {
         Booking booking = bookingOptional.get();
         if (booking.getStatus() == BookingStatus.PENDING_PAYMENT) {
             booking.setStatus(BookingStatus.CONFIRMED);
+            booking.setPaymentStatus(PaymentStatus.COMPLETED);
             booking.setExpiresAt(null);
             bookingRepository.save(booking);
             logger.info("Booking {} confirmed successfully.", booking.getId());
@@ -58,8 +60,31 @@ public class StripeWebhookService {
     @Transactional
     public void handlePaymentFailed(PaymentIntent paymentIntent) {
         String bookingIdStr = paymentIntent.getMetadata().get("bookingId");
-        if (bookingIdStr != null) {
-            logger.warn("Payment failed for booking {}. Reason: {}", bookingIdStr, paymentIntent.getLastPaymentError().getMessage());
+        if (bookingIdStr == null) {
+            logger.error("Missing bookingId in PaymentIntent metadata for failed pi_id: {}", paymentIntent.getId());
+            return;
         }
+
+        long bookingId;
+        try {
+            bookingId = Long.parseLong(bookingIdStr);
+        } catch (NumberFormatException e) {
+            logger.error("Invalid bookingId format in metadata for failed pi_id: {}. Value: '{}'", paymentIntent.getId(), bookingIdStr);
+            return;
+        }
+
+        Optional<Booking> bookingOptional = bookingRepository.findById(bookingId);
+
+        if (bookingOptional.isEmpty()) {
+            logger.error("Booking with ID {} not found for failed PaymentIntent {}", bookingId, paymentIntent.getId());
+            return;
+        }
+
+        Booking booking = bookingOptional.get();
+        booking.setPaymentStatus(PaymentStatus.FAILED);
+        booking.setStatus(BookingStatus.CANCELLED);
+        bookingRepository.save(booking);
+
+        logger.warn("Payment failed for booking {}. Reason: {}. Booking status set to CANCELLED.", bookingIdStr, paymentIntent.getLastPaymentError() != null ? paymentIntent.getLastPaymentError().getMessage() : "N/A");
     }
 }

@@ -15,6 +15,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -49,4 +50,14 @@ public class Booking {
 
     @Column
     private LocalDateTime expiresAt;
+
+    @Column
+    private BigDecimal amount;
+
+    @Column
+    private String currency;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status")
+    private PaymentStatus paymentStatus;
 }

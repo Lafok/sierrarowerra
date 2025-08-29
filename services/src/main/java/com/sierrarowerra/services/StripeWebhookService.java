@@ -1,8 +1,10 @@
 package com.sierrarowerra.services;
 
 import com.sierrarowerra.domain.BookingRepository;
+import com.sierrarowerra.domain.PaymentRepository;
 import com.sierrarowerra.model.Booking;
 import com.sierrarowerra.model.BookingStatus;
+import com.sierrarowerra.model.Payment;
 import com.sierrarowerra.model.PaymentStatus;
 import com.stripe.model.PaymentIntent;
 import org.slf4j.Logger;
@@ -10,16 +12,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-
 @Service
 public class StripeWebhookService {
 
     private static final Logger logger = LoggerFactory.getLogger(StripeWebhookService.class);
     private final BookingRepository bookingRepository;
+    private final PaymentRepository paymentRepository;
 
-    public StripeWebhookService(BookingRepository bookingRepository) {
+    public StripeWebhookService(BookingRepository bookingRepository, PaymentRepository paymentRepository) {
         this.bookingRepository = bookingRepository;
+        this.paymentRepository = paymentRepository;
     }
 
     @Transactional
@@ -30,28 +32,22 @@ public class StripeWebhookService {
             return;
         }
 
-        long bookingId;
-        try {
-            bookingId = Long.parseLong(bookingIdStr);
-        } catch (NumberFormatException e) {
-            logger.error("Invalid bookingId format in metadata for pi_id: {}. Value: '{}'", paymentIntent.getId(), bookingIdStr);
-            return;
-        }
+        long bookingId = Long.parseLong(bookingIdStr);
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalStateException("Booking not found for id: " + bookingId));
 
-        Optional<Booking> bookingOptional = bookingRepository.findById(bookingId);
+        Payment payment = paymentRepository.findByBookingId(bookingId)
+                .orElseThrow(() -> new IllegalStateException("Payment not found for booking id: " + bookingId));
 
-        if (bookingOptional.isEmpty()) {
-            logger.error("Booking with ID {} not found for successful PaymentIntent {}", bookingId, paymentIntent.getId());
-            return;
-        }
-
-        Booking booking = bookingOptional.get();
         if (booking.getStatus() == BookingStatus.PENDING_PAYMENT) {
             booking.setStatus(BookingStatus.CONFIRMED);
-            booking.setPaymentStatus(PaymentStatus.COMPLETED);
             booking.setExpiresAt(null);
             bookingRepository.save(booking);
-            logger.info("Booking {} confirmed successfully.", booking.getId());
+
+            payment.setStatus(PaymentStatus.COMPLETED);
+            paymentRepository.save(payment);
+
+            logger.info("Booking {} confirmed and payment {} marked as COMPLETED.", booking.getId(), payment.getId());
         } else {
             logger.warn("Received successful payment webhook for booking {} which is not in PENDING_PAYMENT state (current: {}). Ignoring.", booking.getId(), booking.getStatus());
         }
@@ -65,26 +61,20 @@ public class StripeWebhookService {
             return;
         }
 
-        long bookingId;
-        try {
-            bookingId = Long.parseLong(bookingIdStr);
-        } catch (NumberFormatException e) {
-            logger.error("Invalid bookingId format in metadata for failed pi_id: {}. Value: '{}'", paymentIntent.getId(), bookingIdStr);
-            return;
-        }
+        long bookingId = Long.parseLong(bookingIdStr);
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalStateException("Booking not found for id: " + bookingId));
 
-        Optional<Booking> bookingOptional = bookingRepository.findById(bookingId);
+        Payment payment = paymentRepository.findByBookingId(bookingId)
+                .orElseThrow(() -> new IllegalStateException("Payment not found for booking id: " + bookingId));
 
-        if (bookingOptional.isEmpty()) {
-            logger.error("Booking with ID {} not found for failed PaymentIntent {}", bookingId, paymentIntent.getId());
-            return;
-        }
-
-        Booking booking = bookingOptional.get();
-        booking.setPaymentStatus(PaymentStatus.FAILED);
         booking.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
 
-        logger.warn("Payment failed for booking {}. Reason: {}. Booking status set to CANCELLED.", bookingIdStr, paymentIntent.getLastPaymentError() != null ? paymentIntent.getLastPaymentError().getMessage() : "N/A");
+        payment.setStatus(PaymentStatus.FAILED);
+        paymentRepository.save(payment);
+
+        logger.warn("Payment failed for booking {}. Reason: {}. Booking and Payment status updated.", 
+                bookingIdStr, paymentIntent.getLastPaymentError() != null ? paymentIntent.getLastPaymentError().getMessage() : "N/A");
     }
 }

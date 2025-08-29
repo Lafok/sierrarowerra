@@ -2,8 +2,12 @@ package com.sierrarowerra.services.impl;
 
 import com.sierrarowerra.domain.BookingHistoryRepository;
 import com.sierrarowerra.domain.BookingRepository;
+import com.sierrarowerra.domain.PaymentHistoryRepository;
+import com.sierrarowerra.domain.PaymentRepository;
 import com.sierrarowerra.model.Booking;
 import com.sierrarowerra.model.BookingHistory;
+import com.sierrarowerra.model.Payment;
+import com.sierrarowerra.model.PaymentHistory;
 import com.sierrarowerra.services.BookingArchivingService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -22,6 +26,8 @@ public class BookingArchivingServiceImpl implements BookingArchivingService {
 
     private final BookingRepository bookingRepository;
     private final BookingHistoryRepository bookingHistoryRepository;
+    private final PaymentRepository paymentRepository;
+    private final PaymentHistoryRepository paymentHistoryRepository;
 
     @Override
     @Transactional
@@ -35,6 +41,7 @@ public class BookingArchivingServiceImpl implements BookingArchivingService {
         }
 
         for (Booking booking : bookingsToArchive) {
+            // Create and save booking history
             BookingHistory history = new BookingHistory(
                     null,
                     booking.getBike(),
@@ -43,6 +50,20 @@ public class BookingArchivingServiceImpl implements BookingArchivingService {
                     booking.getBookingEndDate()
             );
             bookingHistoryRepository.save(history);
+
+            paymentRepository.findByBookingId(booking.getId()).ifPresent(payment -> {
+                PaymentHistory paymentHistory = new PaymentHistory(
+                        null,
+                        booking.getId(),
+                        payment.getAmount(),
+                        payment.getCurrency(),
+                        payment.getStatus()
+                );
+                paymentHistoryRepository.save(paymentHistory);
+                paymentRepository.delete(payment);
+                logger.info("Archived and deleted payment {}", payment.getId());
+            });
+
             bookingRepository.delete(booking);
         }
 

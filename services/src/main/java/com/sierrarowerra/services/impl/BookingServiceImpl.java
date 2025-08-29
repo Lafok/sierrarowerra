@@ -1,8 +1,6 @@
 package com.sierrarowerra.services.impl;
 
-import com.sierrarowerra.domain.BikeRepository;
-import com.sierrarowerra.domain.BookingRepository;
-import com.sierrarowerra.domain.UserRepository;
+import com.sierrarowerra.domain.*;
 import com.sierrarowerra.model.*;
 import com.sierrarowerra.model.dto.BookingRequestDto;
 import com.sierrarowerra.model.dto.BookingResponseDto;
@@ -39,18 +37,22 @@ public class BookingServiceImpl implements BookingService {
     private static final Logger logger = LoggerFactory.getLogger(BookingServiceImpl.class);
 
     private final BookingRepository bookingRepository;
+    private final BookingHistoryRepository bookingHistoryRepository;
     private final BikeRepository bikeRepository;
     private final UserRepository userRepository;
+    private final PaymentRepository paymentRepository;
     private final BookingMapper bookingMapper;
 
     private final String stripeSecretKey;
 
-    public BookingServiceImpl(BookingRepository bookingRepository, BikeRepository bikeRepository, 
-                              UserRepository userRepository, BookingMapper bookingMapper,
-                              @Value("${stripe.api.secret-key}") String stripeSecretKey) {
+    public BookingServiceImpl(BookingRepository bookingRepository, BookingHistoryRepository bookingHistoryRepository,
+                              BikeRepository bikeRepository, UserRepository userRepository, PaymentRepository paymentRepository,
+                              BookingMapper bookingMapper, @Value("${stripe.api.secret-key}") String stripeSecretKey) {
         this.bookingRepository = bookingRepository;
+        this.bookingHistoryRepository = bookingHistoryRepository;
         this.bikeRepository = bikeRepository;
         this.userRepository = userRepository;
+        this.paymentRepository = paymentRepository;
         this.bookingMapper = bookingMapper;
         this.stripeSecretKey = stripeSecretKey;
     }
@@ -101,10 +103,14 @@ public class BookingServiceImpl implements BookingService {
         newBooking.setBookingEndDate(request.getEndDate());
         newBooking.setStatus(BookingStatus.PENDING_PAYMENT);
         newBooking.setExpiresAt(LocalDateTime.now().plusMinutes(15));
-        newBooking.setAmount(totalAmount);
-        newBooking.setCurrency("usd");
-        newBooking.setPaymentStatus(PaymentStatus.PENDING);
         Booking savedBooking = bookingRepository.save(newBooking);
+
+        Payment payment = new Payment();
+        payment.setBooking(savedBooking);
+        payment.setAmount(totalAmount);
+        payment.setCurrency("usd");
+        payment.setStatus(PaymentStatus.PENDING);
+        paymentRepository.save(payment);
 
         try {
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
@@ -192,7 +198,7 @@ public class BookingServiceImpl implements BookingService {
     @Transactional(readOnly = true)
     public Page<BookingResponseDto> getBookingHistory(Long userId, Set<String> roles, Pageable pageable) {
         boolean isUserAdmin = roles.stream().anyMatch(role -> role.equals(ERole.ROLE_ADMIN.name()));
-        Page<Booking> historyPage = isUserAdmin ? bookingRepository.findAll(pageable) : bookingRepository.findByUserId(userId, pageable);
+        Page<BookingHistory> historyPage = isUserAdmin ? bookingHistoryRepository.findAll(pageable) : bookingHistoryRepository.findByUserId(userId, pageable);
         return historyPage.map(bookingMapper::toDto);
     }
 }

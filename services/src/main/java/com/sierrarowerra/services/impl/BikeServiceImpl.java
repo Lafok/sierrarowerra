@@ -9,11 +9,14 @@ import com.sierrarowerra.model.Tariff;
 import com.sierrarowerra.model.dto.BikeRequestDto;
 import com.sierrarowerra.model.dto.BikeStatusUpdateRequestDto;
 import com.sierrarowerra.services.BikeService;
+import com.sierrarowerra.services.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -26,6 +29,7 @@ public class BikeServiceImpl implements BikeService {
     private final BikeRepository bikeRepository;
     private final BookingRepository bookingRepository;
     private final TariffRepository tariffRepository;
+    private final FileStorageService fileStorageService;
 
     @Override
     @Transactional(readOnly = true)
@@ -97,5 +101,21 @@ public class BikeServiceImpl implements BikeService {
         } else {
             return bikeRepository.findByIdNotIn(bookedBikeIds);
         }
+    }
+
+    @Override
+    @Transactional
+    public Optional<Bike> addImage(Long id, MultipartFile file) {
+        return bikeRepository.findById(id)
+                .map(bike -> {
+                    String fileName = fileStorageService.storeFile(file);
+                    String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
+                            .path("/uploads/")
+                            .path(fileName)
+                            .toUriString();
+
+                    bike.getImageUrls().add(fileDownloadUri);
+                    return bikeRepository.save(bike);
+                });
     }
 }

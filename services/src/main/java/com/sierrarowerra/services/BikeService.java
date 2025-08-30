@@ -5,6 +5,7 @@ import com.sierrarowerra.model.dto.BikeRequestDto;
 import com.sierrarowerra.model.dto.BikeStatusUpdateRequestDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -24,4 +25,6 @@ public interface BikeService {
     void deleteBike(Long id);
 
     List<Bike> findAvailableBikes(LocalDate startDate, LocalDate endDate);
+
+    Optional<Bike> addImage(Long id, MultipartFile file);
 }

@@ -14,9 +14,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -72,6 +74,15 @@ public class BikeController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Bike> updateBikeStatus(@PathVariable Long id, @Valid @RequestBody BikeStatusUpdateRequestDto statusRequest) {
         return bikeService.updateBikeStatus(id, statusRequest)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "Upload an image for a bike (Admin only)")
+    @PostMapping(value = "/{id}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Bike> uploadImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        return bikeService.addImage(id, file)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

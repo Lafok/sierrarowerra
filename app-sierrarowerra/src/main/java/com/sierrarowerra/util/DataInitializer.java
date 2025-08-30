@@ -35,13 +35,22 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         if (bikeRepository.count() == 0) {
-            Tariff defaultTariff = tariffRepository.findByName("Standard Hourly").orElseThrow();
+            Tariff hourlyTariff = tariffRepository.findByName("Standard Hourly").orElseThrow();
+            Tariff dailyTariff = tariffRepository.findByName("Standard Daily").orElseThrow();
 
-            Bike bike1 = new Bike(null, "Stels Navigator 500", BikeType.MOUNTAIN, BikeStatus.AVAILABLE, defaultTariff);
-            Bike bike2 = new Bike(null, "Merida Speeder 200", BikeType.ROAD, BikeStatus.AVAILABLE, defaultTariff);
-            Bike bike3 = new Bike(null, "Schwinn Wayfarer", BikeType.CITY, BikeStatus.AVAILABLE, defaultTariff);
+            Bike bike1 = new Bike(null, "Stels Navigator 500", BikeType.MOUNTAIN, BikeStatus.AVAILABLE, hourlyTariff,
+                    List.of("https://via.placeholder.com/400x300.png?text=Stels+Navigator+500"));
+            Bike bike2 = new Bike(null, "Merida Speeder 200", BikeType.ROAD, BikeStatus.AVAILABLE, hourlyTariff,
+                    List.of("https://via.placeholder.com/400x300.png?text=Merida+Speeder+200"));
+            Bike bike3 = new Bike(null, "Schwinn Wayfarer", BikeType.CITY, BikeStatus.AVAILABLE, dailyTariff,
+                    List.of("https://via.placeholder.com/400x300.png?text=Schwinn+Wayfarer"));
+            Bike bike4 = new Bike(null, "Giant Talon 29", BikeType.MOUNTAIN, BikeStatus.RENTED, dailyTariff,
+                    List.of("https://via.placeholder.com/400x300.png?text=Giant+Talon+29"));
+            Bike bike5 = new Bike(null, "Trek Domane AL 2", BikeType.ROAD, BikeStatus.MAINTENANCE, hourlyTariff,
+                    List.of("https://via.placeholder.com/400x300.png?text=Trek+Domane+AL+2"));
 
-            bikeRepository.saveAll(List.of(bike1, bike2, bike3));
+
+            bikeRepository.saveAll(List.of(bike1, bike2, bike3, bike4, bike5));
             System.out.println("------ Test bikes have been added to the database ------");
         }
     }

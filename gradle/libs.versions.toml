@@ -6,6 +6,7 @@ lombok = "1.18.38"
 postgresql = "42.7.7"
 jjwt = "0.13.0"
 stripe = "29.5.0"
+jakartaServlet = "6.1.0"
 
 [libraries]
 # Spring
@@ -32,6 +33,7 @@ stripe-java = { module = "com.stripe:stripe-java", version.ref = "stripe" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+jakarta-servlet-api = { module = "jakarta.servlet:jakarta.servlet-api", version.ref = "jakartaServlet" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }

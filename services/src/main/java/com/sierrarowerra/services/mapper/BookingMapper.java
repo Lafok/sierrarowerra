@@ -19,6 +19,7 @@ public class BookingMapper {
         dto.setId(booking.getId());
         dto.setStartDate(booking.getBookingStartDate());
         dto.setEndDate(booking.getBookingEndDate());
+        dto.setStatus(booking.getStatus()); // Add this line
 
         if (booking.getUser() != null) {
             UserDto userDto = new UserDto();

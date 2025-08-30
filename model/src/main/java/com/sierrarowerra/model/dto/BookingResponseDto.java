@@ -1,5 +1,6 @@
 package com.sierrarowerra.model.dto;
 
+import com.sierrarowerra.model.BookingStatus;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -11,4 +12,5 @@ public class BookingResponseDto {
     private LocalDate endDate;
     private UserDto user;
     private BikeDto bike;
+    private BookingStatus status;
 }

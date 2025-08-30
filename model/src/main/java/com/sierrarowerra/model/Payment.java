@@ -36,7 +36,7 @@ public class Payment {
     private BigDecimal amount;
 
     @Column(nullable = false)
-    private String currency = "USD";
+    private String currency = "EUR";
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -1,14 +1,21 @@
 package com.sierrarowerra.services.mapper;
 
+import com.sierrarowerra.domain.PaymentHistoryRepository;
+import com.sierrarowerra.domain.PaymentRepository;
 import com.sierrarowerra.model.Booking;
 import com.sierrarowerra.model.BookingHistory;
 import com.sierrarowerra.model.dto.BikeDto;
 import com.sierrarowerra.model.dto.BookingResponseDto;
 import com.sierrarowerra.model.dto.UserDto;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class BookingMapper {
+
+    private final PaymentRepository paymentRepository;
+    private final PaymentHistoryRepository paymentHistoryRepository;
 
     public BookingResponseDto toDto(Booking booking) {
         if (booking == null) {
@@ -19,7 +26,12 @@ public class BookingMapper {
         dto.setId(booking.getId());
         dto.setStartDate(booking.getBookingStartDate());
         dto.setEndDate(booking.getBookingEndDate());
-        dto.setStatus(booking.getStatus()); // Add this line
+        dto.setStatus(booking.getStatus());
+
+        // Find and set payment details for active bookings
+        paymentRepository.findByBookingId(booking.getId()).ifPresent(payment -> {
+            dto.setAmount(payment.getAmount());
+        });
 
         if (booking.getUser() != null) {
             UserDto userDto = new UserDto();
@@ -49,6 +61,13 @@ public class BookingMapper {
         dto.setId(bookingHistory.getId());
         dto.setStartDate(bookingHistory.getBookingStartDate());
         dto.setEndDate(bookingHistory.getBookingEndDate());
+        dto.setReason(bookingHistory.getReason()); // Set the reason for archival
+
+        // Find and set historical payment details using the original bookingId
+        paymentHistoryRepository.findByBookingId(bookingHistory.getBookingId()).ifPresent(paymentHistory -> {
+            dto.setAmount(paymentHistory.getAmount());
+            dto.setPaymentStatus(paymentHistory.getStatus());
+        });
 
         if (bookingHistory.getUser() != null) {
             UserDto userDto = new UserDto();

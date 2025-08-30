@@ -4,10 +4,7 @@ import com.sierrarowerra.domain.BookingHistoryRepository;
 import com.sierrarowerra.domain.BookingRepository;
 import com.sierrarowerra.domain.PaymentHistoryRepository;
 import com.sierrarowerra.domain.PaymentRepository;
-import com.sierrarowerra.model.Booking;
-import com.sierrarowerra.model.BookingHistory;
-import com.sierrarowerra.model.Payment;
-import com.sierrarowerra.model.PaymentHistory;
+import com.sierrarowerra.model.*;
 import com.sierrarowerra.services.BookingArchivingService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -32,22 +29,25 @@ public class BookingArchivingServiceImpl implements BookingArchivingService {
     @Override
     @Transactional
     public void archiveOldBookings() {
-        logger.info("Starting booking archiving process...");
+        logger.info("Starting booking archiving process for completed bookings...");
         List<Booking> bookingsToArchive = bookingRepository.findAllByBookingEndDateBefore(LocalDate.now());
 
         if (bookingsToArchive.isEmpty()) {
-            logger.info("No bookings to archive.");
+            logger.info("No completed bookings to archive.");
             return;
         }
 
         for (Booking booking : bookingsToArchive) {
-            // Create and save booking history
+            logger.info("Archiving completed booking {}", booking.getId());
+
             BookingHistory history = new BookingHistory(
                     null,
+                    booking.getId(), // <-- Add original booking ID
                     booking.getBike(),
                     booking.getUser(),
                     booking.getBookingStartDate(),
-                    booking.getBookingEndDate()
+                    booking.getBookingEndDate(),
+                    ArchivalReason.COMPLETED
             );
             bookingHistoryRepository.save(history);
 
@@ -61,12 +61,12 @@ public class BookingArchivingServiceImpl implements BookingArchivingService {
                 );
                 paymentHistoryRepository.save(paymentHistory);
                 paymentRepository.delete(payment);
-                logger.info("Archived and deleted payment {}", payment.getId());
+                logger.info("Archived and deleted payment {} for completed booking {}", payment.getId(), booking.getId());
             });
 
             bookingRepository.delete(booking);
         }
 
-        logger.info("Successfully archived {} bookings.", bookingsToArchive.size());
+        logger.info("Successfully archived {} completed bookings.", bookingsToArchive.size());
     }
 }

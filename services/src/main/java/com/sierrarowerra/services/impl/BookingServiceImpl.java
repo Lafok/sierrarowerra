@@ -41,18 +41,21 @@ public class BookingServiceImpl implements BookingService {
     private final BikeRepository bikeRepository;
     private final UserRepository userRepository;
     private final PaymentRepository paymentRepository;
+    private final PaymentHistoryRepository paymentHistoryRepository;
     private final BookingMapper bookingMapper;
 
     private final String stripeSecretKey;
 
     public BookingServiceImpl(BookingRepository bookingRepository, BookingHistoryRepository bookingHistoryRepository,
                               BikeRepository bikeRepository, UserRepository userRepository, PaymentRepository paymentRepository,
-                              BookingMapper bookingMapper, @Value("${stripe.api.secret-key}") String stripeSecretKey) {
+                              PaymentHistoryRepository paymentHistoryRepository, BookingMapper bookingMapper, 
+                              @Value("${stripe.api.secret-key}") String stripeSecretKey) {
         this.bookingRepository = bookingRepository;
         this.bookingHistoryRepository = bookingHistoryRepository;
         this.bikeRepository = bikeRepository;
         this.userRepository = userRepository;
         this.paymentRepository = paymentRepository;
+        this.paymentHistoryRepository = paymentHistoryRepository;
         this.bookingMapper = bookingMapper;
         this.stripeSecretKey = stripeSecretKey;
     }
@@ -108,14 +111,14 @@ public class BookingServiceImpl implements BookingService {
         Payment payment = new Payment();
         payment.setBooking(savedBooking);
         payment.setAmount(totalAmount);
-        payment.setCurrency("usd");
+        payment.setCurrency("eur");
         payment.setStatus(PaymentStatus.PENDING);
         paymentRepository.save(payment);
 
         try {
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                     .setAmount(totalAmount.multiply(new BigDecimal(100)).longValue())
-                    .setCurrency("usd")
+                    .setCurrency("eur")
                     .putMetadata("bookingId", savedBooking.getId().toString())
                     .setAutomaticPaymentMethods(
                             PaymentIntentCreateParams.AutomaticPaymentMethods.builder().setEnabled(true).build()
@@ -130,6 +133,49 @@ public class BookingServiceImpl implements BookingService {
             logger.error("Error creating Stripe PaymentIntent for booking {}", savedBooking.getId(), e);
             throw new RuntimeException("Error communicating with payment provider.", e);
         }
+    }
+
+    @Override
+    @Transactional
+    public void deleteBooking(Long bookingId, Long currentUserId, Set<String> roles) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
+
+        boolean isUserAdmin = roles.stream().anyMatch(role -> role.equals(ERole.ROLE_ADMIN.name()));
+        boolean isOwner = Objects.equals(booking.getUser().getId(), currentUserId);
+
+        if (!isUserAdmin && !isOwner) {
+            throw new AccessDeniedException("You are not authorized to cancel this booking.");
+        }
+
+        logger.info("User {} is cancelling booking {}. Archiving...", currentUserId, bookingId);
+
+        BookingHistory history = new BookingHistory(
+                null,
+                booking.getId(),
+                booking.getBike(),
+                booking.getUser(),
+                booking.getBookingStartDate(),
+                booking.getBookingEndDate(),
+                ArchivalReason.CANCELLED_BY_USER
+        );
+        bookingHistoryRepository.save(history);
+
+        paymentRepository.findByBookingId(booking.getId()).ifPresent(payment -> {
+            PaymentHistory paymentHistory = new PaymentHistory(
+                    null,
+                    booking.getId(),
+                    payment.getAmount(),
+                    payment.getCurrency(),
+                    payment.getStatus() // <-- THE FIX: Use the actual status from the payment
+            );
+            paymentHistoryRepository.save(paymentHistory);
+            paymentRepository.delete(payment);
+            logger.info("Archived and deleted payment {} for cancelled booking {} with status {}", payment.getId(), booking.getId(), payment.getStatus());
+        });
+
+        bookingRepository.delete(booking);
+        logger.info("Successfully cancelled and archived booking {}", bookingId);
     }
 
     @Override
@@ -178,20 +224,6 @@ public class BookingServiceImpl implements BookingService {
                         throw new AccessDeniedException("You are not authorized to view this booking.");
                     }
                 });
-    }
-
-    @Override
-    @Transactional
-    public void deleteBooking(Long bookingId, Long currentUserId, Set<String> roles) {
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
-        boolean isUserAdmin = roles.stream().anyMatch(role -> role.equals(ERole.ROLE_ADMIN.name()));
-        boolean isOwner = Objects.equals(booking.getUser().getId(), currentUserId);
-        if (isUserAdmin || isOwner) {
-            bookingRepository.delete(booking);
-        } else {
-            throw new AccessDeniedException("You are not authorized to delete this booking.");
-        }
     }
 
     @Override

@@ -1,8 +1,10 @@
 package com.sierrarowerra.services;
 
+import com.sierrarowerra.domain.BookingHistoryRepository;
 import com.sierrarowerra.domain.BookingRepository;
-import com.sierrarowerra.model.Booking;
-import com.sierrarowerra.model.BookingStatus;
+import com.sierrarowerra.domain.PaymentHistoryRepository;
+import com.sierrarowerra.domain.PaymentRepository;
+import com.sierrarowerra.model.*;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,30 +22,55 @@ public class BookingCleanupService {
     private static final Logger logger = LoggerFactory.getLogger(BookingCleanupService.class);
 
     private final BookingRepository bookingRepository;
+    private final BookingHistoryRepository bookingHistoryRepository;
+    private final PaymentRepository paymentRepository;
+    private final PaymentHistoryRepository paymentHistoryRepository;
 
-    /**
-     * This task runs every 5 minutes to clean up expired bookings.
-     * It finds bookings that are still in PENDING_PAYMENT status and whose expiration time has passed.
-     * It then changes their status to EXPIRED.
-     */
-    @Scheduled(fixedRate = 300000) // 300,000 milliseconds = 5 minutes
+    @Scheduled(fixedRate = 300000) // 5 minutes
     @Transactional
     public void cleanupExpiredBookings() {
-        logger.info("Running scheduled job to clean up expired bookings...");
+        logger.info("Running scheduled job to archive expired bookings...");
 
         List<Booking> expiredBookings = bookingRepository.findByStatusAndExpiresAtBefore(BookingStatus.PENDING_PAYMENT, LocalDateTime.now());
 
         if (expiredBookings.isEmpty()) {
-            logger.info("No expired bookings found.");
+            logger.info("No expired bookings to archive.");
             return;
         }
 
         for (Booking booking : expiredBookings) {
-            logger.warn("Booking {} has expired. Changing status to EXPIRED.", booking.getId());
-            booking.setStatus(BookingStatus.EXPIRED);
+            logger.warn("Booking {} has expired due to non-payment. Archiving...", booking.getId());
+
+            // 1. Create BookingHistory entry
+            BookingHistory history = new BookingHistory(
+                    null,
+                    booking.getId(), // <-- Add original booking ID
+                    booking.getBike(),
+                    booking.getUser(),
+                    booking.getBookingStartDate(),
+                    booking.getBookingEndDate(),
+                    ArchivalReason.PAYMENT_EXPIRED
+            );
+            bookingHistoryRepository.save(history);
+
+            // 2. Archive and delete the associated payment
+            paymentRepository.findByBookingId(booking.getId()).ifPresent(payment -> {
+                PaymentHistory paymentHistory = new PaymentHistory(
+                        null,
+                        booking.getId(),
+                        payment.getAmount(),
+                        payment.getCurrency(),
+                        PaymentStatus.FAILED // Mark as FAILED since it was not completed
+                );
+                paymentHistoryRepository.save(paymentHistory);
+                paymentRepository.delete(payment);
+                logger.info("Archived and deleted payment {} for expired booking {}", payment.getId(), booking.getId());
+            });
+
+            // 3. Delete the original booking
+            bookingRepository.delete(booking);
         }
 
-        bookingRepository.saveAll(expiredBookings);
-        logger.info("Finished cleaning up {} expired bookings.", expiredBookings.size());
+        logger.info("Finished archiving {} expired bookings.", expiredBookings.size());
     }
 }

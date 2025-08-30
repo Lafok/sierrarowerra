@@ -42,12 +42,13 @@ public class BookingArchivingServiceImpl implements BookingArchivingService {
 
             BookingHistory history = new BookingHistory(
                     null,
-                    booking.getId(), // <-- Add original booking ID
+                    booking.getId(),
                     booking.getBike(),
                     booking.getUser(),
                     booking.getBookingStartDate(),
                     booking.getBookingEndDate(),
-                    ArchivalReason.COMPLETED
+                    ArchivalReason.COMPLETED,
+                    booking.getCreatedAt() // Pass the original creation timestamp
             );
             bookingHistoryRepository.save(history);
 

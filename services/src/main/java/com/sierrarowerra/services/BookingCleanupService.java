@@ -41,33 +41,31 @@ public class BookingCleanupService {
         for (Booking booking : expiredBookings) {
             logger.warn("Booking {} has expired due to non-payment. Archiving...", booking.getId());
 
-            // 1. Create BookingHistory entry
             BookingHistory history = new BookingHistory(
                     null,
-                    booking.getId(), // <-- Add original booking ID
+                    booking.getId(),
                     booking.getBike(),
                     booking.getUser(),
                     booking.getBookingStartDate(),
                     booking.getBookingEndDate(),
-                    ArchivalReason.PAYMENT_EXPIRED
+                    ArchivalReason.PAYMENT_EXPIRED,
+                    booking.getCreatedAt() // Pass the original creation timestamp
             );
             bookingHistoryRepository.save(history);
 
-            // 2. Archive and delete the associated payment
             paymentRepository.findByBookingId(booking.getId()).ifPresent(payment -> {
                 PaymentHistory paymentHistory = new PaymentHistory(
                         null,
                         booking.getId(),
                         payment.getAmount(),
                         payment.getCurrency(),
-                        PaymentStatus.FAILED // Mark as FAILED since it was not completed
+                        PaymentStatus.FAILED
                 );
                 paymentHistoryRepository.save(paymentHistory);
                 paymentRepository.delete(payment);
                 logger.info("Archived and deleted payment {} for expired booking {}", payment.getId(), booking.getId());
             });
 
-            // 3. Delete the original booking
             bookingRepository.delete(booking);
         }
 

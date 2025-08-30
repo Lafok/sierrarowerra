@@ -27,6 +27,7 @@ public class BookingMapper {
         dto.setStartDate(booking.getBookingStartDate());
         dto.setEndDate(booking.getBookingEndDate());
         dto.setStatus(booking.getStatus());
+        dto.setCreatedAt(booking.getCreatedAt()); // Set creation timestamp
 
         // Find and set payment details for active bookings
         paymentRepository.findByBookingId(booking.getId()).ifPresent(payment -> {
@@ -61,7 +62,8 @@ public class BookingMapper {
         dto.setId(bookingHistory.getId());
         dto.setStartDate(bookingHistory.getBookingStartDate());
         dto.setEndDate(bookingHistory.getBookingEndDate());
-        dto.setReason(bookingHistory.getReason()); // Set the reason for archival
+        dto.setReason(bookingHistory.getReason());
+        dto.setCreatedAt(bookingHistory.getCreatedAt()); // Set creation timestamp
 
         // Find and set historical payment details using the original bookingId
         paymentHistoryRepository.findByBookingId(bookingHistory.getBookingId()).ifPresent(paymentHistory -> {

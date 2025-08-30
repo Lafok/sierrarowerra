@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 
 @Data
 @NoArgsConstructor
@@ -38,4 +39,7 @@ public class BookingHistory {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ArchivalReason reason;
+
+    @Column(nullable = false)
+    private ZonedDateTime createdAt;
 }

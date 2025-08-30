@@ -23,8 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
@@ -106,6 +105,7 @@ public class BookingServiceImpl implements BookingService {
         newBooking.setBookingEndDate(request.getEndDate());
         newBooking.setStatus(BookingStatus.PENDING_PAYMENT);
         newBooking.setExpiresAt(LocalDateTime.now().plusMinutes(15));
+        newBooking.setCreatedAt(ZonedDateTime.now(ZoneId.of("CET"))); // Set creation timestamp
         Booking savedBooking = bookingRepository.save(newBooking);
 
         Payment payment = new Payment();
@@ -157,7 +157,8 @@ public class BookingServiceImpl implements BookingService {
                 booking.getUser(),
                 booking.getBookingStartDate(),
                 booking.getBookingEndDate(),
-                ArchivalReason.CANCELLED_BY_USER
+                ArchivalReason.CANCELLED_BY_USER,
+                booking.getCreatedAt() // Pass the original creation timestamp
         );
         bookingHistoryRepository.save(history);
 
@@ -167,7 +168,7 @@ public class BookingServiceImpl implements BookingService {
                     booking.getId(),
                     payment.getAmount(),
                     payment.getCurrency(),
-                    payment.getStatus() // <-- THE FIX: Use the actual status from the payment
+                    payment.getStatus()
             );
             paymentHistoryRepository.save(paymentHistory);
             paymentRepository.delete(payment);

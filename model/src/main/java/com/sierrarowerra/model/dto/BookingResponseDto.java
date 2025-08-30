@@ -8,6 +8,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL) // Fields with null values will not be included in the JSON output
@@ -27,4 +28,5 @@ public class BookingResponseDto {
 
     // Common fields
     private BigDecimal amount;
+    private ZonedDateTime createdAt;
 }

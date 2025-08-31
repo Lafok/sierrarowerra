@@ -11,6 +11,7 @@ import com.sierrarowerra.model.dto.BikeResponseDto;
 import com.sierrarowerra.model.dto.BikeStatusUpdateRequestDto;
 import com.sierrarowerra.services.BikeService;
 import com.sierrarowerra.services.FileStorageService;
+import com.sierrarowerra.services.mapper.TariffMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +34,7 @@ public class BikeServiceImpl implements BikeService {
     private final BookingRepository bookingRepository;
     private final TariffRepository tariffRepository;
     private final FileStorageService fileStorageService;
+    private final TariffMapper tariffMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -140,7 +142,7 @@ public class BikeServiceImpl implements BikeService {
         dto.setStatus(bike.getStatus());
 
         if (bike.getTariff() != null) {
-            dto.setTariffId(bike.getTariff().getId());
+            dto.setTariff(tariffMapper.toDto(bike.getTariff()));
         }
 
         if (bike.getImageUrls() != null) {

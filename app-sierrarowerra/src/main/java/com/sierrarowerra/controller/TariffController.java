@@ -1,6 +1,6 @@
 package com.sierrarowerra.controller;
 
-import com.sierrarowerra.model.Tariff;
+import com.sierrarowerra.model.dto.TariffDto;
 import com.sierrarowerra.services.TariffService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -32,13 +32,13 @@ public class TariffController {
 
     @Operation(summary = "Get a paginated list of all tariffs (Admin only)")
     @GetMapping
-    public Page<Tariff> getAllTariffs(@ParameterObject @PageableDefault(sort = "name", direction = Sort.Direction.ASC) Pageable pageable) {
+    public Page<TariffDto> getAllTariffs(@ParameterObject @PageableDefault(sort = "name", direction = Sort.Direction.ASC) Pageable pageable) {
         return tariffService.findAll(pageable);
     }
 
     @Operation(summary = "Get a specific tariff by its ID (Admin only)")
     @GetMapping("/{id}")
-    public ResponseEntity<Tariff> getTariffById(@PathVariable Long id) {
+    public ResponseEntity<TariffDto> getTariffById(@PathVariable Long id) {
         return tariffService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -46,15 +46,15 @@ public class TariffController {
 
     @Operation(summary = "Create a new tariff (Admin only)")
     @PostMapping
-    public ResponseEntity<Tariff> createTariff(@Valid @RequestBody Tariff tariff) {
-        Tariff newTariff = tariffService.createTariff(tariff);
+    public ResponseEntity<TariffDto> createTariff(@Valid @RequestBody TariffDto tariffDto) {
+        TariffDto newTariff = tariffService.createTariff(tariffDto);
         return new ResponseEntity<>(newTariff, HttpStatus.CREATED);
     }
 
     @Operation(summary = "Update an existing tariff (Admin only)")
     @PutMapping("/{id}")
-    public ResponseEntity<Tariff> updateTariff(@PathVariable Long id, @Valid @RequestBody Tariff tariffDetails) {
-        return tariffService.updateTariff(id, tariffDetails)
+    public ResponseEntity<TariffDto> updateTariff(@PathVariable Long id, @Valid @RequestBody TariffDto tariffDto) {
+        return tariffService.updateTariff(id, tariffDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

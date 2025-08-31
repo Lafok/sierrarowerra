@@ -1,19 +1,19 @@
 package com.sierrarowerra.services;
 
-import com.sierrarowerra.model.Tariff;
+import com.sierrarowerra.model.dto.TariffDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.Optional;
 
 public interface TariffService {
-    Page<Tariff> findAll(Pageable pageable);
+    Page<TariffDto> findAll(Pageable pageable);
 
-    Optional<Tariff> findById(Long id);
+    Optional<TariffDto> findById(Long id);
 
-    Tariff createTariff(Tariff tariff);
+    TariffDto createTariff(TariffDto tariffDto);
 
-    Optional<Tariff> updateTariff(Long id, Tariff tariffDetails);
+    Optional<TariffDto> updateTariff(Long id, TariffDto tariffDto);
 
     void deleteTariff(Long id);
 }

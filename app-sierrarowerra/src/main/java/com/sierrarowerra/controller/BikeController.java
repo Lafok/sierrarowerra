@@ -1,7 +1,7 @@
 package com.sierrarowerra.controller;
 
-import com.sierrarowerra.model.Bike;
 import com.sierrarowerra.model.dto.BikeRequestDto;
+import com.sierrarowerra.model.dto.BikeResponseDto;
 import com.sierrarowerra.model.dto.BikeStatusUpdateRequestDto;
 import com.sierrarowerra.services.BikeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,13 +32,13 @@ public class BikeController {
 
     @Operation(summary = "Get a paginated list of all bikes")
     @GetMapping
-    public Page<Bike> getAllBikes(@ParameterObject @PageableDefault(sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
+    public Page<BikeResponseDto> getAllBikes(@ParameterObject @PageableDefault(sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
         return bikeService.findAll(pageable);
     }
 
     @Operation(summary = "Get a specific bike by its ID")
     @GetMapping("/{id}")
-    public ResponseEntity<Bike> getBikeById(@PathVariable Long id) {
+    public ResponseEntity<BikeResponseDto> getBikeById(@PathVariable Long id) {
         return bikeService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -46,7 +46,7 @@ public class BikeController {
 
     @Operation(summary = "Find available bikes for a given date range")
     @GetMapping("/available")
-    public List<Bike> getAvailableBikes(
+    public List<BikeResponseDto> getAvailableBikes(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         return bikeService.findAvailableBikes(startDate, endDate);
@@ -55,15 +55,15 @@ public class BikeController {
     @Operation(summary = "Create a new bike (Admin only)")
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Bike> createBike(@Valid @RequestBody BikeRequestDto bikeRequest) {
-        Bike newBike = bikeService.createBike(bikeRequest);
+    public ResponseEntity<BikeResponseDto> createBike(@Valid @RequestBody BikeRequestDto bikeRequest) {
+        BikeResponseDto newBike = bikeService.createBike(bikeRequest);
         return new ResponseEntity<>(newBike, HttpStatus.CREATED);
     }
 
     @Operation(summary = "Update an existing bike (Admin only)")
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Bike> updateBike(@PathVariable Long id, @Valid @RequestBody BikeRequestDto bikeRequest) {
+    public ResponseEntity<BikeResponseDto> updateBike(@PathVariable Long id, @Valid @RequestBody BikeRequestDto bikeRequest) {
         return bikeService.updateBike(id, bikeRequest)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -72,7 +72,7 @@ public class BikeController {
     @Operation(summary = "Update the status of a bike (Admin only)")
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Bike> updateBikeStatus(@PathVariable Long id, @Valid @RequestBody BikeStatusUpdateRequestDto statusRequest) {
+    public ResponseEntity<BikeResponseDto> updateBikeStatus(@PathVariable Long id, @Valid @RequestBody BikeStatusUpdateRequestDto statusRequest) {
         return bikeService.updateBikeStatus(id, statusRequest)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -81,7 +81,7 @@ public class BikeController {
     @Operation(summary = "Upload an image for a bike (Admin only)")
     @PostMapping(value = "/{id}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Bike> uploadImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+    public ResponseEntity<BikeResponseDto> uploadImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
         return bikeService.addImage(id, file)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

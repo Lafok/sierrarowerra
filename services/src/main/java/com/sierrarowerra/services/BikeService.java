@@ -1,7 +1,7 @@
 package com.sierrarowerra.services;
 
-import com.sierrarowerra.model.Bike;
 import com.sierrarowerra.model.dto.BikeRequestDto;
+import com.sierrarowerra.model.dto.BikeResponseDto;
 import com.sierrarowerra.model.dto.BikeStatusUpdateRequestDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,19 +12,19 @@ import java.util.List;
 import java.util.Optional;
 
 public interface BikeService {
-    Page<Bike> findAll(Pageable pageable);
+    Page<BikeResponseDto> findAll(Pageable pageable);
 
-    Optional<Bike> findById(Long id);
+    Optional<BikeResponseDto> findById(Long id);
 
-    Bike createBike(BikeRequestDto bikeRequest);
+    BikeResponseDto createBike(BikeRequestDto bikeRequest);
 
-    Optional<Bike> updateBike(Long id, BikeRequestDto bikeRequest);
+    Optional<BikeResponseDto> updateBike(Long id, BikeRequestDto bikeRequest);
 
-    Optional<Bike> updateBikeStatus(Long id, BikeStatusUpdateRequestDto statusRequest);
+    Optional<BikeResponseDto> updateBikeStatus(Long id, BikeStatusUpdateRequestDto statusRequest);
 
     void deleteBike(Long id);
 
-    List<Bike> findAvailableBikes(LocalDate startDate, LocalDate endDate);
+    List<BikeResponseDto> findAvailableBikes(LocalDate startDate, LocalDate endDate);
 
-    Optional<Bike> addImage(Long id, MultipartFile file);
+    Optional<BikeResponseDto> addImage(Long id, MultipartFile file);
 }

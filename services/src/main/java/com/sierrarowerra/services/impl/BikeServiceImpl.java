@@ -7,6 +7,7 @@ import com.sierrarowerra.model.Bike;
 import com.sierrarowerra.model.BikeStatus;
 import com.sierrarowerra.model.Tariff;
 import com.sierrarowerra.model.dto.BikeRequestDto;
+import com.sierrarowerra.model.dto.BikeResponseDto;
 import com.sierrarowerra.model.dto.BikeStatusUpdateRequestDto;
 import com.sierrarowerra.services.BikeService;
 import com.sierrarowerra.services.FileStorageService;
@@ -19,8 +20,10 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,19 +36,19 @@ public class BikeServiceImpl implements BikeService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<Bike> findAll(Pageable pageable) {
-        return bikeRepository.findAll(pageable);
+    public Page<BikeResponseDto> findAll(Pageable pageable) {
+        return bikeRepository.findAll(pageable).map(this::convertToDto);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Bike> findById(Long id) {
-        return bikeRepository.findById(id);
+    public Optional<BikeResponseDto> findById(Long id) {
+        return bikeRepository.findById(id).map(this::convertToDto);
     }
 
     @Override
     @Transactional
-    public Bike createBike(BikeRequestDto bikeRequest) {
+    public BikeResponseDto createBike(BikeRequestDto bikeRequest) {
         Tariff tariff = tariffRepository.findById(bikeRequest.getTariffId())
                 .orElseThrow(() -> new IllegalArgumentException("Tariff not found with id: " + bikeRequest.getTariffId()));
 
@@ -54,12 +57,14 @@ public class BikeServiceImpl implements BikeService {
         newBike.setType(bikeRequest.getType());
         newBike.setStatus(BikeStatus.AVAILABLE);
         newBike.setTariff(tariff);
-        return bikeRepository.save(newBike);
+
+        Bike savedBike = bikeRepository.save(newBike);
+        return convertToDto(savedBike);
     }
 
     @Override
     @Transactional
-    public Optional<Bike> updateBike(Long id, BikeRequestDto bikeRequest) {
+    public Optional<BikeResponseDto> updateBike(Long id, BikeRequestDto bikeRequest) {
         Tariff tariff = tariffRepository.findById(bikeRequest.getTariffId())
                 .orElseThrow(() -> new IllegalArgumentException("Tariff not found with id: " + bikeRequest.getTariffId()));
 
@@ -68,17 +73,19 @@ public class BikeServiceImpl implements BikeService {
                     bike.setName(bikeRequest.getName());
                     bike.setType(bikeRequest.getType());
                     bike.setTariff(tariff);
-                    return bikeRepository.save(bike);
+                    Bike savedBike = bikeRepository.save(bike);
+                    return convertToDto(savedBike);
                 });
     }
 
     @Override
     @Transactional
-    public Optional<Bike> updateBikeStatus(Long id, BikeStatusUpdateRequestDto statusRequest) {
+    public Optional<BikeResponseDto> updateBikeStatus(Long id, BikeStatusUpdateRequestDto statusRequest) {
         return bikeRepository.findById(id)
                 .map(bike -> {
                     bike.setStatus(statusRequest.getStatus());
-                    return bikeRepository.save(bike);
+                    Bike savedBike = bikeRepository.save(bike);
+                    return convertToDto(savedBike);
                 });
     }
 
@@ -93,19 +100,24 @@ public class BikeServiceImpl implements BikeService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Bike> findAvailableBikes(LocalDate startDate, LocalDate endDate) {
+    public List<BikeResponseDto> findAvailableBikes(LocalDate startDate, LocalDate endDate) {
         List<Long> bookedBikeIds = bookingRepository.findBookedBikeIds(startDate, endDate);
+        List<Bike> availableBikes;
 
         if (bookedBikeIds.isEmpty()) {
-            return bikeRepository.findAll();
+            availableBikes = bikeRepository.findAll();
         } else {
-            return bikeRepository.findByIdNotIn(bookedBikeIds);
+            availableBikes = bikeRepository.findByIdNotIn(bookedBikeIds);
         }
+
+        return availableBikes.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
-    public Optional<Bike> addImage(Long id, MultipartFile file) {
+    public Optional<BikeResponseDto> addImage(Long id, MultipartFile file) {
         return bikeRepository.findById(id)
                 .map(bike -> {
                     String fileName = fileStorageService.storeFile(file);
@@ -115,7 +127,28 @@ public class BikeServiceImpl implements BikeService {
                             .toUriString();
 
                     bike.getImageUrls().add(fileDownloadUri);
-                    return bikeRepository.save(bike);
+                    Bike savedBike = bikeRepository.save(bike);
+                    return convertToDto(savedBike);
                 });
+    }
+
+    private BikeResponseDto convertToDto(Bike bike) {
+        BikeResponseDto dto = new BikeResponseDto();
+        dto.setId(bike.getId());
+        dto.setName(bike.getName());
+        dto.setType(bike.getType());
+        dto.setStatus(bike.getStatus());
+
+        if (bike.getTariff() != null) {
+            dto.setTariffId(bike.getTariff().getId());
+        }
+
+        if (bike.getImageUrls() != null) {
+            dto.setImageUrls(List.copyOf(bike.getImageUrls()));
+        } else {
+            dto.setImageUrls(Collections.emptyList());
+        }
+
+        return dto;
     }
 }

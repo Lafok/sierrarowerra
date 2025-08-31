@@ -2,7 +2,9 @@ package com.sierrarowerra.services.impl;
 
 import com.sierrarowerra.domain.TariffRepository;
 import com.sierrarowerra.model.Tariff;
+import com.sierrarowerra.model.dto.TariffDto;
 import com.sierrarowerra.services.TariffService;
+import com.sierrarowerra.services.mapper.TariffMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,35 +18,38 @@ import java.util.Optional;
 public class TariffServiceImpl implements TariffService {
 
     private final TariffRepository tariffRepository;
+    private final TariffMapper tariffMapper;
 
     @Override
     @Transactional(readOnly = true)
-    public Page<Tariff> findAll(Pageable pageable) {
-        return tariffRepository.findAll(pageable);
+    public Page<TariffDto> findAll(Pageable pageable) {
+        return tariffRepository.findAll(pageable)
+                .map(tariffMapper::toDto);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Tariff> findById(Long id) {
-        return tariffRepository.findById(id);
+    public Optional<TariffDto> findById(Long id) {
+        return tariffRepository.findById(id)
+                .map(tariffMapper::toDto);
     }
 
     @Override
     @Transactional
-    public Tariff createTariff(Tariff tariff) {
-        return tariffRepository.save(tariff);
+    public TariffDto createTariff(TariffDto tariffDto) {
+        Tariff tariff = tariffMapper.toEntity(tariffDto);
+        tariff = tariffRepository.save(tariff);
+        return tariffMapper.toDto(tariff);
     }
 
     @Override
     @Transactional
-    public Optional<Tariff> updateTariff(Long id, Tariff tariffDetails) {
+    public Optional<TariffDto> updateTariff(Long id, TariffDto tariffDto) {
         return tariffRepository.findById(id)
                 .map(tariff -> {
-                    tariff.setName(tariffDetails.getName());
-                    tariff.setType(tariffDetails.getType());
-                    tariff.setPrice(tariffDetails.getPrice());
-                    tariff.setDescription(tariffDetails.getDescription());
-                    return tariffRepository.save(tariff);
+                    tariffMapper.updateTariffFromDto(tariffDto, tariff);
+                    tariff = tariffRepository.save(tariff);
+                    return tariffMapper.toDto(tariff);
                 });
     }
 

@@ -1,0 +1,19 @@
+package com.sierrarowerra.services.mapper;
+
+import com.sierrarowerra.model.Tariff;
+import com.sierrarowerra.model.dto.TariffDto;
+import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.factory.Mappers;
+
+@Mapper(componentModel = "spring")
+public interface TariffMapper {
+
+    TariffMapper INSTANCE = Mappers.getMapper(TariffMapper.class);
+
+    TariffDto toDto(Tariff tariff);
+
+    Tariff toEntity(TariffDto tariffDto);
+
+    void updateTariffFromDto(TariffDto tariffDto, @MappingTarget Tariff tariff);
+}

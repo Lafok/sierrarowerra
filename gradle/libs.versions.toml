@@ -7,6 +7,7 @@ postgresql = "42.7.7"
 jjwt = "0.13.0"
 stripe = "29.5.0"
 jakartaServlet = "6.1.0"
+mapstruct = "1.5.5.Final"
 
 [libraries]
 # Spring
@@ -28,6 +29,10 @@ jjwt-jackson = { module = "io.jsonwebtoken:jjwt-jackson", version.ref = "jjwt" }
 
 # Stripe
 stripe-java = { module = "com.stripe:stripe-java", version.ref = "stripe" }
+
+# MapStruct
+mapstruct = { module = "org.mapstruct:mapstruct", version.ref = "mapstruct" }
+mapstruct-processor = { module = "org.mapstruct:mapstruct-processor", version.ref = "mapstruct" }
 
 # Other
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }

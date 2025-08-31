@@ -5,5 +5,10 @@ dependencies {
     implementation libs.spring.boot.starter.security
     implementation libs.stripe.java
     implementation libs.spring.boot.starter.web
+    implementation libs.mapstruct
+
     compileOnly libs.jakarta.servlet.api
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+    annotationProcessor libs.mapstruct.processor
 }

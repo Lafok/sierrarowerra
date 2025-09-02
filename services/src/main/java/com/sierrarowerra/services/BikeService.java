@@ -27,4 +27,8 @@ public interface BikeService {
     List<BikeResponseDto> findAvailableBikes(LocalDate startDate, LocalDate endDate);
 
     Optional<BikeResponseDto> addImage(Long id, MultipartFile file);
+
+    Optional<BikeResponseDto> setPrimaryImage(Long bikeId, String imageUrl);
+
+    Optional<BikeResponseDto> deleteImage(Long bikeId, String imageUrl);
 }

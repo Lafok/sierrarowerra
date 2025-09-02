@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Service
 public class FileStorageServiceImpl implements FileStorageService {
@@ -29,7 +30,14 @@ public class FileStorageServiceImpl implements FileStorageService {
     }
 
     @Override
-    public String storeFile(MultipartFile file) {
+    public String storeFile(MultipartFile file, Long bikeId) {
+        Path bikeDirectory = this.fileStorageLocation.resolve(String.valueOf(bikeId));
+        try {
+            Files.createDirectories(bikeDirectory);
+        } catch (Exception ex) {
+            throw new RuntimeException("Could not create the directory for the bike.", ex);
+        }
+
         String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
         String fileExtension = "";
         try {
@@ -37,19 +45,38 @@ public class FileStorageServiceImpl implements FileStorageService {
         } catch (Exception e) {
             // ignore
         }
-        String fileName = UUID.randomUUID().toString() + fileExtension;
+        String uniqueFileName = UUID.randomUUID().toString() + fileExtension;
 
         try {
-            if(fileName.contains("..")) {
-                throw new RuntimeException("Sorry! Filename contains invalid path sequence " + fileName);
+            if(uniqueFileName.contains("..")) {
+                throw new RuntimeException("Sorry! Filename contains invalid path sequence " + uniqueFileName);
             }
 
-            Path targetLocation = this.fileStorageLocation.resolve(fileName);
+            Path targetLocation = bikeDirectory.resolve(uniqueFileName);
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
-            return fileName;
+            return String.valueOf(bikeId) + "/" + uniqueFileName;
         } catch (IOException ex) {
-            throw new RuntimeException("Could not store file " + fileName + ". Please try again!", ex);
+            throw new RuntimeException("Could not store file " + uniqueFileName + ". Please try again!", ex);
+        }
+    }
+
+    @Override
+    public void deleteFile(String fileName) {
+        try {
+            Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
+            Files.deleteIfExists(filePath);
+
+            Path parentDir = filePath.getParent();
+            if (parentDir != null && Files.isDirectory(parentDir)) {
+                try (Stream<Path> entries = Files.list(parentDir)) {
+                    if (entries.findFirst().isEmpty()) {
+                        Files.deleteIfExists(parentDir);
+                    }
+                }
+            }
+        } catch (IOException ex) {
+            throw new RuntimeException("Could not delete file " + fileName, ex);
         }
     }
 }

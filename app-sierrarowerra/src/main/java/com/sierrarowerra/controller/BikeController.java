@@ -22,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/bikes")
@@ -83,6 +84,32 @@ public class BikeController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BikeResponseDto> uploadImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
         return bikeService.addImage(id, file)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "Set a primary image for a bike (Admin only)")
+    @PatchMapping("/{id}/images/primary")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BikeResponseDto> setPrimaryImage(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String imageUrl = body.get("imageUrl");
+        if (imageUrl == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        return bikeService.setPrimaryImage(id, imageUrl)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "Delete an image from a bike (Admin only)")
+    @DeleteMapping("/{id}/images")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BikeResponseDto> deleteImage(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String imageUrl = body.get("imageUrl");
+        if (imageUrl == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        return bikeService.deleteImage(id, imageUrl)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

@@ -13,5 +13,5 @@ public class BikeResponseDto {
     private BikeType type;
     private BikeStatus status;
     private TariffDto tariff;
-    private List<String> imageUrls;
+    private List<ImageDto> images;
 }

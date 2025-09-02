@@ -1,7 +1,6 @@
 package com.sierrarowerra.model;
 
 import jakarta.persistence.CollectionTable;
-import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -45,6 +44,5 @@ public class Bike {
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "bike_images", joinColumns = @JoinColumn(name = "bike_id"))
-    @Column(name = "image_url")
-    private List<String> imageUrls = new ArrayList<>();
+    private List<Image> images = new ArrayList<>();
 }

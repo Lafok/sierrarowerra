@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.List;
 
 public interface BookingService {
 
@@ -23,4 +24,6 @@ public interface BookingService {
     Page<BookingResponseDto> getBookingHistory(Long userId, Set<String> roles, Pageable pageable);
 
     PaymentInitiationResponseDto extendBooking(Long bookingId, BookingExtensionRequestDto extensionRequest, Long currentUserId, Set<String> roles);
+
+    List<String> getBookedDatesForBike(Long bikeId);
 }

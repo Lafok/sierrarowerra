@@ -31,4 +31,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findAllByBookingEndDateBefore(LocalDate date);
 
     List<Booking> findByStatusAndExpiresAtBefore(BookingStatus status, LocalDateTime expiresAt);
+
+    List<Booking> findByBikeIdAndStatus(Long bikeId, BookingStatus status);
 }

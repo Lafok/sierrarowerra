@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.HashSet;
+import java.util.stream.Collectors;
 
 @Service
 public class BookingServiceImpl implements BookingService {
@@ -47,7 +49,7 @@ public class BookingServiceImpl implements BookingService {
 
     public BookingServiceImpl(BookingRepository bookingRepository, BookingHistoryRepository bookingHistoryRepository,
                               BikeRepository bikeRepository, UserRepository userRepository, PaymentRepository paymentRepository,
-                              PaymentHistoryRepository paymentHistoryRepository, BookingMapper bookingMapper, 
+                              PaymentHistoryRepository paymentHistoryRepository, BookingMapper bookingMapper,
                               @Value("${stripe.api.secret-key}") String stripeSecretKey) {
         this.bookingRepository = bookingRepository;
         this.bookingHistoryRepository = bookingHistoryRepository;
@@ -233,5 +235,26 @@ public class BookingServiceImpl implements BookingService {
         boolean isUserAdmin = roles.stream().anyMatch(role -> role.equals(ERole.ROLE_ADMIN.name()));
         Page<BookingHistory> historyPage = isUserAdmin ? bookingHistoryRepository.findAll(pageable) : bookingHistoryRepository.findByUserId(userId, pageable);
         return historyPage.map(bookingMapper::toDto);
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> getBookedDatesForBike(Long bikeId) {
+
+        List<Booking> bookings = bookingRepository.findByBikeIdAndStatus(bikeId, BookingStatus.CONFIRMED);
+
+        Set<LocalDate> bookedDates = new HashSet<>();
+
+        for (Booking booking : bookings) {
+            LocalDate startDate = booking.getBookingStartDate();
+            LocalDate endDate = booking.getBookingEndDate();
+
+            for (LocalDate date = startDate; date.isBefore(endDate); date = date.plusDays(1)) {
+                bookedDates.add(date);
+            }
+        }
+
+        return bookedDates.stream()
+                .map(LocalDate::toString)
+                .collect(Collectors.toList());
     }
 }

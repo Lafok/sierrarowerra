@@ -1,6 +1,6 @@
 package com.sierrarowerra.services;
 
-import com.sierrarowerra.model.dto.TariffDto;
+import com.sierrarowerra.model.dto.tariff.TariffDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

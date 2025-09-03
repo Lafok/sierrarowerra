@@ -1,6 +1,6 @@
 package com.sierrarowerra.services;
 
-import com.sierrarowerra.model.User;
+import com.sierrarowerra.domain.user.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

@@ -1,7 +1,7 @@
 package com.sierrarowerra.security.services;
 
-import com.sierrarowerra.domain.UserRepository;
-import com.sierrarowerra.model.User;
+import com.sierrarowerra.domain.user.UserRepository;
+import com.sierrarowerra.domain.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

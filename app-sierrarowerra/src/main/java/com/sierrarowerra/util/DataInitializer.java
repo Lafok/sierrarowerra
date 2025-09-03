@@ -1,9 +1,16 @@
 package com.sierrarowerra.util;
 
-import com.sierrarowerra.domain.BikeRepository;
-import com.sierrarowerra.domain.RoleRepository;
-import com.sierrarowerra.domain.TariffRepository;
-import com.sierrarowerra.model.*;
+import com.sierrarowerra.domain.bike.BikeRepository;
+import com.sierrarowerra.domain.user.Role;
+import com.sierrarowerra.domain.user.RoleRepository;
+import com.sierrarowerra.domain.tariff.TariffRepository;
+import com.sierrarowerra.domain.bike.Bike;
+import com.sierrarowerra.domain.image.Image;
+import com.sierrarowerra.domain.tariff.Tariff;
+import com.sierrarowerra.model.enums.BikeStatus;
+import com.sierrarowerra.model.enums.BikeType;
+import com.sierrarowerra.model.enums.ERole;
+import com.sierrarowerra.model.enums.TariffType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;

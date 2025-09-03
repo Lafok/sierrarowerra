@@ -1,8 +1,8 @@
 package com.sierrarowerra.services;
 
-import com.sierrarowerra.model.dto.BikeRequestDto;
-import com.sierrarowerra.model.dto.BikeResponseDto;
-import com.sierrarowerra.model.dto.BikeStatusUpdateRequestDto;
+import com.sierrarowerra.model.dto.bike.BikeRequestDto;
+import com.sierrarowerra.model.dto.bike.BikeResponseDto;
+import com.sierrarowerra.model.dto.bike.BikeStatusUpdateRequestDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

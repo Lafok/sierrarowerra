@@ -1,11 +1,11 @@
 package com.sierrarowerra.services;
 
-import com.sierrarowerra.domain.BookingRepository;
-import com.sierrarowerra.domain.PaymentRepository;
-import com.sierrarowerra.model.Booking;
-import com.sierrarowerra.model.BookingStatus;
-import com.sierrarowerra.model.Payment;
-import com.sierrarowerra.model.PaymentStatus;
+import com.sierrarowerra.domain.booking.BookingRepository;
+import com.sierrarowerra.domain.payment.PaymentRepository;
+import com.sierrarowerra.domain.booking.Booking;
+import com.sierrarowerra.model.enums.BookingStatus;
+import com.sierrarowerra.domain.payment.Payment;
+import com.sierrarowerra.model.enums.PaymentStatus;
 import com.stripe.model.PaymentIntent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

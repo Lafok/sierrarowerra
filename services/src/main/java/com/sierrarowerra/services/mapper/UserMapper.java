@@ -1,7 +1,7 @@
 package com.sierrarowerra.services.mapper;
 
-import com.sierrarowerra.model.User;
-import com.sierrarowerra.model.dto.UserDto;
+import com.sierrarowerra.domain.user.User;
+import com.sierrarowerra.model.dto.user.UserDto;
 import org.springframework.stereotype.Component;
 
 @Component

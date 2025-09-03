@@ -1,11 +1,11 @@
 package com.sierrarowerra.services.impl;
 
-import com.sierrarowerra.domain.BookingRepository;
-import com.sierrarowerra.domain.RoleRepository;
-import com.sierrarowerra.domain.UserRepository;
-import com.sierrarowerra.model.ERole;
-import com.sierrarowerra.model.Role;
-import com.sierrarowerra.model.User;
+import com.sierrarowerra.domain.booking.BookingRepository;
+import com.sierrarowerra.domain.user.RoleRepository;
+import com.sierrarowerra.domain.user.UserRepository;
+import com.sierrarowerra.model.enums.ERole;
+import com.sierrarowerra.domain.user.Role;
+import com.sierrarowerra.domain.user.User;
 import com.sierrarowerra.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -52,16 +52,14 @@ public class UserServiceImpl implements UserService {
         Set<Role> roles = new HashSet<>();
 
         strRoles.forEach(role -> {
-            switch (role) {
-                case "admin":
-                    Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
-                            .orElseThrow(() -> new RuntimeException("Error: Role 'ADMIN' is not found."));
-                    roles.add(adminRole);
-                    break;
-                default:
-                    Role userRole = roleRepository.findByName(ERole.ROLE_USER)
-                            .orElseThrow(() -> new RuntimeException("Error: Role 'USER' is not found."));
-                    roles.add(userRole);
+            if (role.equals("admin")) {
+                Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
+                        .orElseThrow(() -> new RuntimeException("Error: Role 'ADMIN' is not found."));
+                roles.add(adminRole);
+            } else {
+                Role userRole = roleRepository.findByName(ERole.ROLE_USER)
+                        .orElseThrow(() -> new RuntimeException("Error: Role 'USER' is not found."));
+                roles.add(userRole);
             }
         });
 

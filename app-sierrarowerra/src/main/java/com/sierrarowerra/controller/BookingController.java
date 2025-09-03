@@ -1,9 +1,9 @@
 package com.sierrarowerra.controller;
 
-import com.sierrarowerra.model.dto.BookingRequestDto;
-import com.sierrarowerra.model.dto.BookingResponseDto;
-import com.sierrarowerra.model.dto.PaymentInitiationResponseDto;
-import com.sierrarowerra.model.dto.payload.BookingExtensionRequestDto;
+import com.sierrarowerra.model.dto.booking.BookingRequestDto;
+import com.sierrarowerra.model.dto.booking.BookingResponseDto;
+import com.sierrarowerra.model.dto.payment.PaymentInitiationResponseDto;
+import com.sierrarowerra.model.dto.booking.BookingExtensionRequestDto;
 import com.sierrarowerra.security.services.UserDetailsImpl;
 import com.sierrarowerra.services.BookingService;
 import io.swagger.v3.oas.annotations.Operation;

@@ -1,9 +1,9 @@
 package com.sierrarowerra.controller;
 
-import com.sierrarowerra.model.User;
-import com.sierrarowerra.model.dto.PageDto;
-import com.sierrarowerra.model.dto.UserDto;
-import com.sierrarowerra.model.dto.payload.UserRolesRequestDto;
+import com.sierrarowerra.domain.user.User;
+import com.sierrarowerra.model.dto.common.PageDto;
+import com.sierrarowerra.model.dto.user.UserDto;
+import com.sierrarowerra.model.dto.user.UserRolesRequestDto;
 import com.sierrarowerra.security.services.UserDetailsImpl;
 import com.sierrarowerra.services.UserService;
 import com.sierrarowerra.services.mapper.PageMapper;

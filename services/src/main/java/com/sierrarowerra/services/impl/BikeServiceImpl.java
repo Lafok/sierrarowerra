@@ -1,16 +1,16 @@
 package com.sierrarowerra.services.impl;
 
-import com.sierrarowerra.domain.BikeRepository;
-import com.sierrarowerra.domain.BookingRepository;
-import com.sierrarowerra.domain.TariffRepository;
-import com.sierrarowerra.model.Bike;
-import com.sierrarowerra.model.BikeStatus;
-import com.sierrarowerra.model.Image;
-import com.sierrarowerra.model.Tariff;
-import com.sierrarowerra.model.dto.BikeRequestDto;
-import com.sierrarowerra.model.dto.BikeResponseDto;
-import com.sierrarowerra.model.dto.BikeStatusUpdateRequestDto;
-import com.sierrarowerra.model.dto.ImageDto;
+import com.sierrarowerra.domain.bike.BikeRepository;
+import com.sierrarowerra.domain.booking.BookingRepository;
+import com.sierrarowerra.domain.tariff.TariffRepository;
+import com.sierrarowerra.domain.bike.Bike;
+import com.sierrarowerra.model.enums.BikeStatus;
+import com.sierrarowerra.domain.image.Image;
+import com.sierrarowerra.domain.tariff.Tariff;
+import com.sierrarowerra.model.dto.bike.BikeRequestDto;
+import com.sierrarowerra.model.dto.bike.BikeResponseDto;
+import com.sierrarowerra.model.dto.bike.BikeStatusUpdateRequestDto;
+import com.sierrarowerra.model.dto.image.ImageDto;
 import com.sierrarowerra.services.BikeService;
 import com.sierrarowerra.services.FileStorageService;
 import com.sierrarowerra.services.mapper.TariffMapper;
@@ -177,7 +177,7 @@ public class BikeServiceImpl implements BikeService {
                     bike.getImages().remove(imageToRemove);
 
                     if (imageToRemove.isPrimary() && !bike.getImages().isEmpty()) {
-                        bike.getImages().get(0).setPrimary(true);
+                        bike.getImages().getFirst().setPrimary(true);
                     }
 
                     try {

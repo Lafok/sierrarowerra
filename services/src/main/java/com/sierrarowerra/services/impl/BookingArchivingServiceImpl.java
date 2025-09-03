@@ -1,10 +1,13 @@
 package com.sierrarowerra.services.impl;
 
-import com.sierrarowerra.domain.BookingHistoryRepository;
-import com.sierrarowerra.domain.BookingRepository;
-import com.sierrarowerra.domain.PaymentHistoryRepository;
-import com.sierrarowerra.domain.PaymentRepository;
-import com.sierrarowerra.model.*;
+import com.sierrarowerra.domain.booking.BookingHistoryRepository;
+import com.sierrarowerra.domain.booking.BookingRepository;
+import com.sierrarowerra.domain.payment.PaymentHistoryRepository;
+import com.sierrarowerra.domain.payment.PaymentRepository;
+import com.sierrarowerra.domain.booking.Booking;
+import com.sierrarowerra.domain.booking.BookingHistory;
+import com.sierrarowerra.domain.payment.PaymentHistory;
+import com.sierrarowerra.model.enums.ArchivalReason;
 import com.sierrarowerra.services.BookingArchivingService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;

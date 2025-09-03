@@ -1,8 +1,8 @@
 package com.sierrarowerra.controller;
 
-import com.sierrarowerra.model.dto.BikeRequestDto;
-import com.sierrarowerra.model.dto.BikeResponseDto;
-import com.sierrarowerra.model.dto.BikeStatusUpdateRequestDto;
+import com.sierrarowerra.model.dto.bike.BikeRequestDto;
+import com.sierrarowerra.model.dto.bike.BikeResponseDto;
+import com.sierrarowerra.model.dto.bike.BikeStatusUpdateRequestDto;
 import com.sierrarowerra.services.BikeService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;

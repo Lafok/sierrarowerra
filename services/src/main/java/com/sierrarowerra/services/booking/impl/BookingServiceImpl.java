@@ -260,7 +260,7 @@ public class BookingServiceImpl implements BookingService {
             LocalDate startDate = booking.getBookingStartDate();
             LocalDate endDate = booking.getBookingEndDate();
 
-            for (LocalDate date = startDate; date.isBefore(endDate); date = date.plusDays(1)) {
+            for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
                 bookedDates.add(date);
             }
         }

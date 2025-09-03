@@ -12,6 +12,7 @@ public class BookingDatesValidator implements ConstraintValidator<ValidBookingDa
             // We don't handle null checks here, that's for @NotNull
             return true;
         }
-        return dto.getEndDate().isAfter(dto.getStartDate());
+        // End date must be after or the same as start date
+        return !dto.getEndDate().isBefore(dto.getStartDate());
     }
 }

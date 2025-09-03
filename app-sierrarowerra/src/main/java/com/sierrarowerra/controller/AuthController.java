@@ -1,15 +1,15 @@
 package com.sierrarowerra.controller;
 
-import com.sierrarowerra.domain.RoleRepository;
-import com.sierrarowerra.domain.UserRepository;
-import com.sierrarowerra.model.ERole;
-import com.sierrarowerra.model.Role;
-import com.sierrarowerra.model.User;
-import com.sierrarowerra.model.dto.payload.JwtResponse;
-import com.sierrarowerra.model.dto.payload.LoginRequest;
-import com.sierrarowerra.model.dto.payload.MessageResponse;
-import com.sierrarowerra.model.dto.payload.PasswordChangeRequest;
-import com.sierrarowerra.model.dto.payload.SignupRequest;
+import com.sierrarowerra.domain.user.RoleRepository;
+import com.sierrarowerra.domain.user.UserRepository;
+import com.sierrarowerra.model.enums.ERole;
+import com.sierrarowerra.domain.user.Role;
+import com.sierrarowerra.domain.user.User;
+import com.sierrarowerra.model.dto.auth.JwtResponse;
+import com.sierrarowerra.model.dto.auth.LoginRequest;
+import com.sierrarowerra.model.dto.common.MessageResponse;
+import com.sierrarowerra.model.dto.user.PasswordChangeRequest;
+import com.sierrarowerra.model.dto.auth.SignupRequest;
 import com.sierrarowerra.security.jwt.JwtUtils;
 import com.sierrarowerra.security.services.UserDetailsImpl;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -70,7 +71,7 @@ public class AuthController {
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         List<String> roles = userDetails.getAuthorities().stream()
-                .map(item -> item.getAuthority())
+                .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(new JwtResponse(jwt,
@@ -117,16 +118,14 @@ public class AuthController {
             roles.add(userRole);
         } else {
             strRoles.forEach(role -> {
-                switch (role) {
-                    case "admin":
-                        Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                        roles.add(adminRole);
-                        break;
-                    default:
-                        Role userRole = roleRepository.findByName(ERole.ROLE_USER)
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                        roles.add(userRole);
+                if (role.equals("admin")) {
+                    Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
+                            .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                    roles.add(adminRole);
+                } else {
+                    Role userRole = roleRepository.findByName(ERole.ROLE_USER)
+                            .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                    roles.add(userRole);
                 }
             });
         }

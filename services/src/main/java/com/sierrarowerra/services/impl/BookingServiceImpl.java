@@ -1,11 +1,23 @@
 package com.sierrarowerra.services.impl;
 
-import com.sierrarowerra.domain.*;
-import com.sierrarowerra.model.*;
-import com.sierrarowerra.model.dto.BookingRequestDto;
-import com.sierrarowerra.model.dto.BookingResponseDto;
-import com.sierrarowerra.model.dto.PaymentInitiationResponseDto;
-import com.sierrarowerra.model.dto.payload.BookingExtensionRequestDto;
+import com.sierrarowerra.domain.bike.Bike;
+import com.sierrarowerra.domain.bike.BikeRepository;
+import com.sierrarowerra.domain.booking.Booking;
+import com.sierrarowerra.domain.booking.BookingHistory;
+import com.sierrarowerra.domain.booking.BookingHistoryRepository;
+import com.sierrarowerra.domain.booking.BookingRepository;
+import com.sierrarowerra.domain.payment.Payment;
+import com.sierrarowerra.domain.payment.PaymentHistory;
+import com.sierrarowerra.domain.payment.PaymentHistoryRepository;
+import com.sierrarowerra.domain.payment.PaymentRepository;
+import com.sierrarowerra.domain.tariff.Tariff;
+import com.sierrarowerra.domain.user.User;
+import com.sierrarowerra.domain.user.UserRepository;
+import com.sierrarowerra.model.dto.booking.BookingRequestDto;
+import com.sierrarowerra.model.dto.booking.BookingResponseDto;
+import com.sierrarowerra.model.dto.payment.PaymentInitiationResponseDto;
+import com.sierrarowerra.model.dto.booking.BookingExtensionRequestDto;
+import com.sierrarowerra.model.enums.*;
 import com.sierrarowerra.services.BookingService;
 import com.sierrarowerra.services.mapper.BookingMapper;
 import com.stripe.Stripe;
@@ -29,6 +41,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.HashSet;
+import java.util.stream.Collectors;
 
 @Service
 public class BookingServiceImpl implements BookingService {
@@ -47,7 +61,7 @@ public class BookingServiceImpl implements BookingService {
 
     public BookingServiceImpl(BookingRepository bookingRepository, BookingHistoryRepository bookingHistoryRepository,
                               BikeRepository bikeRepository, UserRepository userRepository, PaymentRepository paymentRepository,
-                              PaymentHistoryRepository paymentHistoryRepository, BookingMapper bookingMapper, 
+                              PaymentHistoryRepository paymentHistoryRepository, BookingMapper bookingMapper,
                               @Value("${stripe.api.secret-key}") String stripeSecretKey) {
         this.bookingRepository = bookingRepository;
         this.bookingHistoryRepository = bookingHistoryRepository;
@@ -233,5 +247,26 @@ public class BookingServiceImpl implements BookingService {
         boolean isUserAdmin = roles.stream().anyMatch(role -> role.equals(ERole.ROLE_ADMIN.name()));
         Page<BookingHistory> historyPage = isUserAdmin ? bookingHistoryRepository.findAll(pageable) : bookingHistoryRepository.findByUserId(userId, pageable);
         return historyPage.map(bookingMapper::toDto);
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> getBookedDatesForBike(Long bikeId) {
+
+        List<Booking> bookings = bookingRepository.findByBikeIdAndStatus(bikeId, BookingStatus.CONFIRMED);
+
+        Set<LocalDate> bookedDates = new HashSet<>();
+
+        for (Booking booking : bookings) {
+            LocalDate startDate = booking.getBookingStartDate();
+            LocalDate endDate = booking.getBookingEndDate();
+
+            for (LocalDate date = startDate; date.isBefore(endDate); date = date.plusDays(1)) {
+                bookedDates.add(date);
+            }
+        }
+
+        return bookedDates.stream()
+                .map(LocalDate::toString)
+                .collect(Collectors.toList());
     }
 }

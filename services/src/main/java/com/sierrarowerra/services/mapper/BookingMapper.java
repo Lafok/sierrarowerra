@@ -1,12 +1,12 @@
 package com.sierrarowerra.services.mapper;
 
-import com.sierrarowerra.domain.PaymentHistoryRepository;
-import com.sierrarowerra.domain.PaymentRepository;
-import com.sierrarowerra.model.Booking;
-import com.sierrarowerra.model.BookingHistory;
-import com.sierrarowerra.model.dto.BikeDto;
-import com.sierrarowerra.model.dto.BookingResponseDto;
-import com.sierrarowerra.model.dto.UserDto;
+import com.sierrarowerra.domain.payment.PaymentHistoryRepository;
+import com.sierrarowerra.domain.payment.PaymentRepository;
+import com.sierrarowerra.domain.booking.Booking;
+import com.sierrarowerra.domain.booking.BookingHistory;
+import com.sierrarowerra.model.dto.bike.BikeDto;
+import com.sierrarowerra.model.dto.booking.BookingResponseDto;
+import com.sierrarowerra.model.dto.user.UserDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

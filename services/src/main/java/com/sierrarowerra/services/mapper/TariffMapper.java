@@ -1,7 +1,7 @@
 package com.sierrarowerra.services.mapper;
 
-import com.sierrarowerra.model.Tariff;
-import com.sierrarowerra.model.dto.TariffDto;
+import com.sierrarowerra.domain.tariff.Tariff;
+import com.sierrarowerra.model.dto.tariff.TariffDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.factory.Mappers;

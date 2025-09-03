@@ -1,8 +1,8 @@
 package com.sierrarowerra.services.impl;
 
-import com.sierrarowerra.domain.TariffRepository;
-import com.sierrarowerra.model.Tariff;
-import com.sierrarowerra.model.dto.TariffDto;
+import com.sierrarowerra.domain.tariff.TariffRepository;
+import com.sierrarowerra.domain.tariff.Tariff;
+import com.sierrarowerra.model.dto.tariff.TariffDto;
 import com.sierrarowerra.services.TariffService;
 import com.sierrarowerra.services.mapper.TariffMapper;
 import lombok.RequiredArgsConstructor;

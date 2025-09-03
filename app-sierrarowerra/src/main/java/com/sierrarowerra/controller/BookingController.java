@@ -1,9 +1,9 @@
 package com.sierrarowerra.controller;
 
-import com.sierrarowerra.model.dto.BookingRequestDto;
-import com.sierrarowerra.model.dto.BookingResponseDto;
-import com.sierrarowerra.model.dto.PaymentInitiationResponseDto;
-import com.sierrarowerra.model.dto.payload.BookingExtensionRequestDto;
+import com.sierrarowerra.model.dto.booking.BookingRequestDto;
+import com.sierrarowerra.model.dto.booking.BookingResponseDto;
+import com.sierrarowerra.model.dto.payment.PaymentInitiationResponseDto;
+import com.sierrarowerra.model.dto.booking.BookingExtensionRequestDto;
 import com.sierrarowerra.security.services.UserDetailsImpl;
 import com.sierrarowerra.services.BookingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/bookings")
@@ -79,5 +80,12 @@ public class BookingController {
         return currentUser.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toSet());
+    }
+
+    @Operation(summary = "Get a list of all booked dates for a specific bike")
+    @GetMapping("/bike/{bikeId}/dates")
+    public ResponseEntity<List<String>> getBookedDatesForBike(@PathVariable Long bikeId) {
+        List<String> bookedDates = bookingService.getBookedDatesForBike(bikeId);
+        return ResponseEntity.ok(bookedDates);
     }
 }

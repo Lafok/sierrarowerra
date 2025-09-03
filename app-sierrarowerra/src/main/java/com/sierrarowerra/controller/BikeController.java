@@ -1,8 +1,8 @@
 package com.sierrarowerra.controller;
 
-import com.sierrarowerra.model.dto.BikeRequestDto;
-import com.sierrarowerra.model.dto.BikeResponseDto;
-import com.sierrarowerra.model.dto.BikeStatusUpdateRequestDto;
+import com.sierrarowerra.model.dto.bike.BikeRequestDto;
+import com.sierrarowerra.model.dto.bike.BikeResponseDto;
+import com.sierrarowerra.model.dto.bike.BikeStatusUpdateRequestDto;
 import com.sierrarowerra.services.BikeService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -20,8 +20,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/bikes")
@@ -82,7 +84,37 @@ public class BikeController {
     @PostMapping(value = "/{id}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BikeResponseDto> uploadImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
-        return bikeService.addImage(id, file)
+        try {
+            return bikeService.addImage(id, file.getBytes(), file.getOriginalFilename())
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @Operation(summary = "Set a primary image for a bike (Admin only)")
+    @PatchMapping("/{id}/images/primary")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BikeResponseDto> setPrimaryImage(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String imageUrl = body.get("imageUrl");
+        if (imageUrl == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        return bikeService.setPrimaryImage(id, imageUrl)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "Delete an image from a bike (Admin only)")
+    @DeleteMapping("/{id}/images")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BikeResponseDto> deleteImage(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String imageUrl = body.get("imageUrl");
+        if (imageUrl == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        return bikeService.deleteImage(id, imageUrl)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

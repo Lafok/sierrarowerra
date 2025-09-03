@@ -1,6 +1,6 @@
 package com.sierrarowerra.controller;
 
-import com.sierrarowerra.model.dto.TariffDto;
+import com.sierrarowerra.model.dto.tariff.TariffDto;
 import com.sierrarowerra.services.TariffService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;

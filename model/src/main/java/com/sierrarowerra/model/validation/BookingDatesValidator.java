@@ -1,6 +1,6 @@
 package com.sierrarowerra.model.validation;
 
-import com.sierrarowerra.model.dto.BookingRequestDto;
+import com.sierrarowerra.model.dto.booking.BookingRequestDto;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 

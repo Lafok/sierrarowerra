@@ -1,14 +1,15 @@
 package com.sierrarowerra.services;
 
-import com.sierrarowerra.model.dto.BookingRequestDto;
-import com.sierrarowerra.model.dto.BookingResponseDto;
-import com.sierrarowerra.model.dto.PaymentInitiationResponseDto;
-import com.sierrarowerra.model.dto.payload.BookingExtensionRequestDto;
+import com.sierrarowerra.model.dto.booking.BookingRequestDto;
+import com.sierrarowerra.model.dto.booking.BookingResponseDto;
+import com.sierrarowerra.model.dto.payment.PaymentInitiationResponseDto;
+import com.sierrarowerra.model.dto.booking.BookingExtensionRequestDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.List;
 
 public interface BookingService {
 
@@ -23,4 +24,6 @@ public interface BookingService {
     Page<BookingResponseDto> getBookingHistory(Long userId, Set<String> roles, Pageable pageable);
 
     PaymentInitiationResponseDto extendBooking(Long bookingId, BookingExtensionRequestDto extensionRequest, Long currentUserId, Set<String> roles);
+
+    List<String> getBookedDatesForBike(Long bikeId);
 }

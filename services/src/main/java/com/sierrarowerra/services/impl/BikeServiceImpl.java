@@ -1,14 +1,16 @@
 package com.sierrarowerra.services.impl;
 
-import com.sierrarowerra.domain.BikeRepository;
-import com.sierrarowerra.domain.BookingRepository;
-import com.sierrarowerra.domain.TariffRepository;
-import com.sierrarowerra.model.Bike;
-import com.sierrarowerra.model.BikeStatus;
-import com.sierrarowerra.model.Tariff;
-import com.sierrarowerra.model.dto.BikeRequestDto;
-import com.sierrarowerra.model.dto.BikeResponseDto;
-import com.sierrarowerra.model.dto.BikeStatusUpdateRequestDto;
+import com.sierrarowerra.domain.bike.BikeRepository;
+import com.sierrarowerra.domain.booking.BookingRepository;
+import com.sierrarowerra.domain.tariff.TariffRepository;
+import com.sierrarowerra.domain.bike.Bike;
+import com.sierrarowerra.model.enums.BikeStatus;
+import com.sierrarowerra.domain.image.Image;
+import com.sierrarowerra.domain.tariff.Tariff;
+import com.sierrarowerra.model.dto.bike.BikeRequestDto;
+import com.sierrarowerra.model.dto.bike.BikeResponseDto;
+import com.sierrarowerra.model.dto.bike.BikeStatusUpdateRequestDto;
+import com.sierrarowerra.model.dto.image.ImageDto;
 import com.sierrarowerra.services.BikeService;
 import com.sierrarowerra.services.FileStorageService;
 import com.sierrarowerra.services.mapper.TariffMapper;
@@ -17,9 +19,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
@@ -119,16 +121,73 @@ public class BikeServiceImpl implements BikeService {
 
     @Override
     @Transactional
-    public Optional<BikeResponseDto> addImage(Long id, MultipartFile file) {
+    public Optional<BikeResponseDto> addImage(Long id, byte[] content, String originalFilename) {
         return bikeRepository.findById(id)
                 .map(bike -> {
-                    String fileName = fileStorageService.storeFile(file);
-                    String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
-                            .path("/uploads/")
-                            .path(fileName)
-                            .toUriString();
+                    String fileName = fileStorageService.storeFile(content, originalFilename, id);
+                    String fileDownloadUri = "/uploads/" + fileName;
 
-                    bike.getImageUrls().add(fileDownloadUri);
+                    boolean isPrimary = bike.getImages().isEmpty();
+                    Image newImage = new Image(fileDownloadUri, isPrimary);
+                    bike.getImages().add(newImage);
+
+                    Bike savedBike = bikeRepository.save(bike);
+                    return convertToDto(savedBike);
+                });
+    }
+
+    @Override
+    @Transactional
+    public Optional<BikeResponseDto> setPrimaryImage(Long bikeId, String imageUrl) {
+        return bikeRepository.findById(bikeId)
+                .map(bike -> {
+                    boolean imageFound = false;
+                    for (Image image : bike.getImages()) {
+                        if (image.getImageUrl().equals(imageUrl)) {
+                            image.setPrimary(true);
+                            imageFound = true;
+                        } else {
+                            image.setPrimary(false);
+                        }
+                    }
+
+                    if (!imageFound) {
+                        throw new IllegalArgumentException("Image with URL " + imageUrl + " not found for this bike.");
+                    }
+
+                    Bike savedBike = bikeRepository.save(bike);
+                    return convertToDto(savedBike);
+                });
+    }
+
+    @Override
+    @Transactional
+    public Optional<BikeResponseDto> deleteImage(Long bikeId, String imageUrl) {
+        return bikeRepository.findById(bikeId)
+                .map(bike -> {
+                    Optional<Image> imageToRemoveOpt = bike.getImages().stream()
+                            .filter(img -> img.getImageUrl().equals(imageUrl))
+                            .findFirst();
+
+                    if (imageToRemoveOpt.isEmpty()) {
+                        throw new IllegalArgumentException("Image with URL " + imageUrl + " not found for this bike.");
+                    }
+
+                    Image imageToRemove = imageToRemoveOpt.get();
+                    bike.getImages().remove(imageToRemove);
+
+                    if (imageToRemove.isPrimary() && !bike.getImages().isEmpty()) {
+                        bike.getImages().getFirst().setPrimary(true);
+                    }
+
+                    try {
+                        String path = Paths.get(new URI(imageUrl).getPath()).toString();
+                        String fileName = path.substring(path.indexOf("/uploads/") + "/uploads/".length());
+                        fileStorageService.deleteFile(fileName);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Could not extract file name from URL: " + imageUrl, e);
+                    }
+
                     Bike savedBike = bikeRepository.save(bike);
                     return convertToDto(savedBike);
                 });
@@ -145,10 +204,12 @@ public class BikeServiceImpl implements BikeService {
             dto.setTariff(tariffMapper.toDto(bike.getTariff()));
         }
 
-        if (bike.getImageUrls() != null) {
-            dto.setImageUrls(List.copyOf(bike.getImageUrls()));
+        if (bike.getImages() != null) {
+            dto.setImages(bike.getImages().stream()
+                    .map(image -> new ImageDto(image.getImageUrl(), image.isPrimary()))
+                    .collect(Collectors.toList()));
         } else {
-            dto.setImageUrls(Collections.emptyList());
+            dto.setImages(Collections.emptyList());
         }
 
         return dto;

@@ -86,6 +86,10 @@ public class BookingServiceImpl implements BookingService {
         Bike bike = bikeRepository.findById(request.getBikeId())
                 .orElseThrow(() -> new IllegalArgumentException("Bike not found with id: " + request.getBikeId()));
 
+        if (bike.getStatus() != BikeStatus.AVAILABLE) {
+            throw new IllegalStateException("Bike is not available for booking. Current status: " + bike.getStatus());
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 

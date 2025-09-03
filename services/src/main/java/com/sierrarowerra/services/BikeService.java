@@ -5,7 +5,6 @@ import com.sierrarowerra.model.dto.BikeResponseDto;
 import com.sierrarowerra.model.dto.BikeStatusUpdateRequestDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -26,7 +25,7 @@ public interface BikeService {
 
     List<BikeResponseDto> findAvailableBikes(LocalDate startDate, LocalDate endDate);
 
-    Optional<BikeResponseDto> addImage(Long id, MultipartFile file);
+    Optional<BikeResponseDto> addImage(Long id, byte[] content, String originalFilename);
 
     Optional<BikeResponseDto> setPrimaryImage(Long bikeId, String imageUrl);
 

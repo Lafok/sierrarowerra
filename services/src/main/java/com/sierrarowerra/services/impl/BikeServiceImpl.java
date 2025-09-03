@@ -19,8 +19,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.nio.file.Paths;
@@ -123,14 +121,11 @@ public class BikeServiceImpl implements BikeService {
 
     @Override
     @Transactional
-    public Optional<BikeResponseDto> addImage(Long id, MultipartFile file) {
+    public Optional<BikeResponseDto> addImage(Long id, byte[] content, String originalFilename) {
         return bikeRepository.findById(id)
                 .map(bike -> {
-                    String fileName = fileStorageService.storeFile(file, id);
-                    String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
-                            .path("/uploads/")
-                            .path(fileName)
-                            .toUriString();
+                    String fileName = fileStorageService.storeFile(content, originalFilename, id);
+                    String fileDownloadUri = "/uploads/" + fileName;
 
                     boolean isPrimary = bike.getImages().isEmpty();
                     Image newImage = new Image(fileDownloadUri, isPrimary);

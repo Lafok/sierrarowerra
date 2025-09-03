@@ -4,8 +4,8 @@ import com.sierrarowerra.services.FileStorageService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,7 +30,7 @@ public class FileStorageServiceImpl implements FileStorageService {
     }
 
     @Override
-    public String storeFile(MultipartFile file, Long bikeId) {
+    public String storeFile(byte[] content, String originalFilename, Long bikeId) {
         Path bikeDirectory = this.fileStorageLocation.resolve(String.valueOf(bikeId));
         try {
             Files.createDirectories(bikeDirectory);
@@ -38,7 +38,7 @@ public class FileStorageServiceImpl implements FileStorageService {
             throw new RuntimeException("Could not create the directory for the bike.", ex);
         }
 
-        String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
+        String originalFileName = StringUtils.cleanPath(originalFilename);
         String fileExtension = "";
         try {
             fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
@@ -53,7 +53,7 @@ public class FileStorageServiceImpl implements FileStorageService {
             }
 
             Path targetLocation = bikeDirectory.resolve(uniqueFileName);
-            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(new ByteArrayInputStream(content), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
             return String.valueOf(bikeId) + "/" + uniqueFileName;
         } catch (IOException ex) {

@@ -1,4 +1,4 @@
-package com.sierrarowerra.services;
+package com.sierrarowerra.services.filestorage;
 
 public interface FileStorageService {
     String storeFile(byte[] content, String originalFilename, Long bikeId);

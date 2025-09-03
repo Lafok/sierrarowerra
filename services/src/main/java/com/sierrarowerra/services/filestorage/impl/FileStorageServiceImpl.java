@@ -1,6 +1,6 @@
-package com.sierrarowerra.services.impl;
+package com.sierrarowerra.services.filestorage.impl;
 
-import com.sierrarowerra.services.FileStorageService;
+import com.sierrarowerra.services.filestorage.FileStorageService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;

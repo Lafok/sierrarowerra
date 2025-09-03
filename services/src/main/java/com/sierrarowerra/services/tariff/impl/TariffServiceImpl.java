@@ -1,10 +1,10 @@
-package com.sierrarowerra.services.impl;
+package com.sierrarowerra.services.tariff.impl;
 
 import com.sierrarowerra.domain.tariff.TariffRepository;
 import com.sierrarowerra.domain.tariff.Tariff;
 import com.sierrarowerra.model.dto.tariff.TariffDto;
-import com.sierrarowerra.services.TariffService;
-import com.sierrarowerra.services.mapper.TariffMapper;
+import com.sierrarowerra.services.tariff.TariffService;
+import com.sierrarowerra.services.tariff.mapper.TariffMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

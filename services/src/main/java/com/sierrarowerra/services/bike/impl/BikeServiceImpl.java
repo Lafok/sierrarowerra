@@ -1,4 +1,4 @@
-package com.sierrarowerra.services.impl;
+package com.sierrarowerra.services.bike.impl;
 
 import com.sierrarowerra.domain.bike.BikeRepository;
 import com.sierrarowerra.domain.booking.BookingRepository;
@@ -11,9 +11,9 @@ import com.sierrarowerra.model.dto.bike.BikeRequestDto;
 import com.sierrarowerra.model.dto.bike.BikeResponseDto;
 import com.sierrarowerra.model.dto.bike.BikeStatusUpdateRequestDto;
 import com.sierrarowerra.model.dto.image.ImageDto;
-import com.sierrarowerra.services.BikeService;
-import com.sierrarowerra.services.FileStorageService;
-import com.sierrarowerra.services.mapper.TariffMapper;
+import com.sierrarowerra.services.bike.BikeService;
+import com.sierrarowerra.services.filestorage.FileStorageService;
+import com.sierrarowerra.services.tariff.mapper.TariffMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -1,4 +1,4 @@
-package com.sierrarowerra.services.mapper;
+package com.sierrarowerra.services.common.mapper;
 
 import com.sierrarowerra.model.dto.common.PageDto;
 import org.springframework.data.domain.Page;

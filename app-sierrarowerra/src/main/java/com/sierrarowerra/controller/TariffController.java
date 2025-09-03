@@ -1,7 +1,7 @@
 package com.sierrarowerra.controller;
 
 import com.sierrarowerra.model.dto.tariff.TariffDto;
-import com.sierrarowerra.services.TariffService;
+import com.sierrarowerra.services.tariff.TariffService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

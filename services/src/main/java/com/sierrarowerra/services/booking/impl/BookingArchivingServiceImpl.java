@@ -1,4 +1,4 @@
-package com.sierrarowerra.services.impl;
+package com.sierrarowerra.services.booking.impl;
 
 import com.sierrarowerra.domain.booking.BookingHistoryRepository;
 import com.sierrarowerra.domain.booking.BookingRepository;
@@ -8,7 +8,7 @@ import com.sierrarowerra.domain.booking.Booking;
 import com.sierrarowerra.domain.booking.BookingHistory;
 import com.sierrarowerra.domain.payment.PaymentHistory;
 import com.sierrarowerra.model.enums.ArchivalReason;
-import com.sierrarowerra.services.BookingArchivingService;
+import com.sierrarowerra.services.booking.BookingArchivingService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

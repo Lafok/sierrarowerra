@@ -1,4 +1,4 @@
-package com.sierrarowerra.services.mapper;
+package com.sierrarowerra.services.booking.mapper;
 
 import com.sierrarowerra.domain.payment.PaymentHistoryRepository;
 import com.sierrarowerra.domain.payment.PaymentRepository;

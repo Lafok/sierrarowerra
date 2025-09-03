@@ -1,4 +1,4 @@
-package com.sierrarowerra.services;
+package com.sierrarowerra.services.user;
 
 import com.sierrarowerra.domain.user.User;
 import org.springframework.data.domain.Page;

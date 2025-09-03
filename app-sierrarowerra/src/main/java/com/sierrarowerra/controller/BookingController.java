@@ -5,7 +5,7 @@ import com.sierrarowerra.model.dto.booking.BookingResponseDto;
 import com.sierrarowerra.model.dto.payment.PaymentInitiationResponseDto;
 import com.sierrarowerra.model.dto.booking.BookingExtensionRequestDto;
 import com.sierrarowerra.security.services.UserDetailsImpl;
-import com.sierrarowerra.services.BookingService;
+import com.sierrarowerra.services.booking.BookingService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

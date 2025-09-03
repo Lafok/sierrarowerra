@@ -1,4 +1,4 @@
-package com.sierrarowerra.services;
+package com.sierrarowerra.services.booking;
 
 import com.sierrarowerra.domain.booking.BookingHistoryRepository;
 import com.sierrarowerra.domain.booking.BookingRepository;

@@ -1,4 +1,4 @@
-package com.sierrarowerra.services.mapper;
+package com.sierrarowerra.services.user.mapper;
 
 import com.sierrarowerra.domain.user.User;
 import com.sierrarowerra.model.dto.user.UserDto;

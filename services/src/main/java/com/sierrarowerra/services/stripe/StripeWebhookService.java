@@ -1,4 +1,4 @@
-package com.sierrarowerra.services;
+package com.sierrarowerra.services.stripe;
 
 import com.sierrarowerra.domain.booking.BookingRepository;
 import com.sierrarowerra.domain.payment.PaymentRepository;

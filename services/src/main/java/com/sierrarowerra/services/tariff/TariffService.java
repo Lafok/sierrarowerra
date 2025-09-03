@@ -1,4 +1,4 @@
-package com.sierrarowerra.services;
+package com.sierrarowerra.services.tariff;
 
 import com.sierrarowerra.model.dto.tariff.TariffDto;
 import org.springframework.data.domain.Page;

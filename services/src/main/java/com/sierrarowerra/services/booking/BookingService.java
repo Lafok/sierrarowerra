@@ -1,4 +1,4 @@
-package com.sierrarowerra.services;
+package com.sierrarowerra.services.booking;
 
 import com.sierrarowerra.model.dto.booking.BookingRequestDto;
 import com.sierrarowerra.model.dto.booking.BookingResponseDto;

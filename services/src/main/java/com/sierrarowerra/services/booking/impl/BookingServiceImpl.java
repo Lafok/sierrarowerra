@@ -1,4 +1,4 @@
-package com.sierrarowerra.services.impl;
+package com.sierrarowerra.services.booking.impl;
 
 import com.sierrarowerra.domain.bike.Bike;
 import com.sierrarowerra.domain.bike.BikeRepository;
@@ -18,8 +18,8 @@ import com.sierrarowerra.model.dto.booking.BookingResponseDto;
 import com.sierrarowerra.model.dto.payment.PaymentInitiationResponseDto;
 import com.sierrarowerra.model.dto.booking.BookingExtensionRequestDto;
 import com.sierrarowerra.model.enums.*;
-import com.sierrarowerra.services.BookingService;
-import com.sierrarowerra.services.mapper.BookingMapper;
+import com.sierrarowerra.services.booking.BookingService;
+import com.sierrarowerra.services.booking.mapper.BookingMapper;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;

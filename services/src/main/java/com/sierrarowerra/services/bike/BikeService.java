@@ -1,4 +1,4 @@
-package com.sierrarowerra.services;
+package com.sierrarowerra.services.bike;
 
 import com.sierrarowerra.model.dto.bike.BikeRequestDto;
 import com.sierrarowerra.model.dto.bike.BikeResponseDto;

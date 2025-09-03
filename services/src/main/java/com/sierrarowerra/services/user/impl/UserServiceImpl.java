@@ -1,4 +1,4 @@
-package com.sierrarowerra.services.impl;
+package com.sierrarowerra.services.user.impl;
 
 import com.sierrarowerra.domain.booking.BookingRepository;
 import com.sierrarowerra.domain.user.RoleRepository;
@@ -6,7 +6,7 @@ import com.sierrarowerra.domain.user.UserRepository;
 import com.sierrarowerra.model.enums.ERole;
 import com.sierrarowerra.domain.user.Role;
 import com.sierrarowerra.domain.user.User;
-import com.sierrarowerra.services.UserService;
+import com.sierrarowerra.services.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

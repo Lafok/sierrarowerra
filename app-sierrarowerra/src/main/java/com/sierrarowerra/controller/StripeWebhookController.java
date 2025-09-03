@@ -1,6 +1,6 @@
 package com.sierrarowerra.controller;
 
-import com.sierrarowerra.services.StripeWebhookService;
+import com.sierrarowerra.services.stripe.StripeWebhookService;
 import com.stripe.exception.EventDataObjectDeserializationException;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;

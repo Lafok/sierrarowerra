@@ -1,4 +1,4 @@
-package com.sierrarowerra.services.mapper;
+package com.sierrarowerra.services.tariff.mapper;
 
 import com.sierrarowerra.domain.tariff.Tariff;
 import com.sierrarowerra.model.dto.tariff.TariffDto;

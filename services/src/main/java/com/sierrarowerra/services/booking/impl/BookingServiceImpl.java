@@ -106,8 +106,7 @@ public class BookingServiceImpl implements BookingService {
         Tariff tariff = bike.getTariff();
         long duration;
         if (tariff.getType() == TariffType.DAILY) {
-            duration = ChronoUnit.DAYS.between(request.getStartDate(), request.getEndDate());
-            if (duration == 0) duration = 1;
+            duration = ChronoUnit.DAYS.between(request.getStartDate(), request.getEndDate()) + 1;
         } else {
             duration = ChronoUnit.HOURS.between(request.getStartDate().atStartOfDay(), request.getEndDate().atStartOfDay());
             if (duration == 0) duration = 1;

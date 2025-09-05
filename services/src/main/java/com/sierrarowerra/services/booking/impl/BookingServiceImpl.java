@@ -217,7 +217,7 @@ public class BookingServiceImpl implements BookingService {
         }
         BookingRequestDto extensionDto = new BookingRequestDto();
         extensionDto.setBikeId(originalBooking.getBike().getId());
-        extensionDto.setStartDate(originalBooking.getBookingEndDate());
+        extensionDto.setStartDate(originalBooking.getBookingEndDate().plusDays(1));
         extensionDto.setEndDate(extensionRequest.getNewEndDate());
         logger.info("Calling initiateBooking for the extension period.");
         return initiateBooking(extensionDto, originalBooking.getUser().getId());

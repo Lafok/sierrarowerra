@@ -209,6 +209,11 @@ public class BookingServiceImpl implements BookingService {
         if (!isUserAdmin && !isOwner) {
             throw new AccessDeniedException("You are not authorized to extend this booking.");
         }
+
+        if (originalBooking.getStatus() == BookingStatus.PENDING_PAYMENT) {
+            throw new IllegalStateException("Cannot extend a booking with a pending payment. Please complete the payment first.");
+        }
+
         if (!extensionRequest.getNewEndDate().isAfter(originalBooking.getBookingEndDate())) {
             throw new IllegalStateException("New end date must be after the current end date.");
         }

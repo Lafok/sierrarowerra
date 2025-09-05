@@ -43,4 +43,7 @@ public class Payment {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PaymentStatus status;
+
+    @Column(name = "payment_intent_id")
+    private String paymentIntentId;
 }

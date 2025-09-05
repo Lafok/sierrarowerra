@@ -23,6 +23,7 @@ public class BookingResponseDto {
 
     // For active bookings
     private BookingStatus status;
+    private String paymentClientSecret;
 
     // For historical bookings
     private ArchivalReason reason;

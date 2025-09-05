@@ -130,7 +130,6 @@ public class BookingServiceImpl implements BookingService {
         payment.setAmount(totalAmount);
         payment.setCurrency("eur");
         payment.setStatus(PaymentStatus.PENDING);
-        paymentRepository.save(payment);
 
         try {
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
@@ -143,6 +142,9 @@ public class BookingServiceImpl implements BookingService {
                     .build();
 
             PaymentIntent paymentIntent = PaymentIntent.create(params);
+            payment.setPaymentIntentId(paymentIntent.getId());
+            paymentRepository.save(payment);
+
             logger.info("Successfully created Stripe PaymentIntent {} for booking {}", paymentIntent.getId(), savedBooking.getId());
             return new PaymentInitiationResponseDto(paymentIntent.getClientSecret(), savedBooking.getId());
 
@@ -232,16 +234,35 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional(readOnly = true)
     public Optional<BookingResponseDto> findBookingById(Long bookingId, Long currentUserId, Set<String> roles) {
-        return bookingRepository.findById(bookingId)
-                .map(booking -> {
-                    boolean isUserAdmin = roles.stream().anyMatch(role -> role.equals(ERole.ROLE_ADMIN.name()));
-                    boolean isOwner = Objects.equals(booking.getUser().getId(), currentUserId);
-                    if (isUserAdmin || isOwner) {
-                        return bookingMapper.toDto(booking);
-                    } else {
-                        throw new AccessDeniedException("You are not authorized to view this booking.");
+        Optional<Booking> bookingOptional = bookingRepository.findById(bookingId);
+        if (bookingOptional.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Booking booking = bookingOptional.get();
+        boolean isUserAdmin = roles.stream().anyMatch(role -> role.equals(ERole.ROLE_ADMIN.name()));
+        boolean isOwner = Objects.equals(booking.getUser().getId(), currentUserId);
+
+        if (!isUserAdmin && !isOwner) {
+            throw new AccessDeniedException("You are not authorized to view this booking.");
+        }
+
+        BookingResponseDto dto = bookingMapper.toDto(booking);
+
+        if (booking.getStatus() == BookingStatus.PENDING_PAYMENT && booking.getExpiresAt().isAfter(LocalDateTime.now())) {
+            paymentRepository.findByBookingId(booking.getId()).ifPresent(payment -> {
+                if (payment.getPaymentIntentId() != null) {
+                    try {
+                        PaymentIntent paymentIntent = PaymentIntent.retrieve(payment.getPaymentIntentId());
+                        dto.setPaymentClientSecret(paymentIntent.getClientSecret());
+                    } catch (StripeException e) {
+                        logger.error("Error retrieving PaymentIntent from Stripe for booking {}", booking.getId(), e);
                     }
-                });
+                }
+            });
+        }
+
+        return Optional.of(dto);
     }
 
     @Override

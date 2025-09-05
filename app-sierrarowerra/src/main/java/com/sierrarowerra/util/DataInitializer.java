@@ -51,7 +51,7 @@ public class DataInitializer implements CommandLineRunner {
                     List.of(new Image("https://d2lljesbicak00.cloudfront.net/merida-v2/crud-zoom-img/master/bikes/2025/NINETY-SIX_9000_gryslv_MY25.tif?p3", true)));
             Bike bike3 = new Bike(null, "Canyon Commuter mid-step ", BikeType.CITY, BikeStatus.AVAILABLE, hourlyTariff,
                     List.of(new Image("https://www.canyon.com/dw/image/v2/BCML_PRD/on/demandware.static/-/Sites-canyon-master/default/dw79321dff/images/full/2025_FULL_/2025/2025_FULL_commuter_mds_4203_U023_P07.jpg?sw=1300&sfrm=png&q=90&bgcolor=F2F2F2", true)));
-            Bike bike4 = new Bike(null, "Santa Cruz v10", BikeType.MOUNTAIN, BikeStatus.RENTED, hourlyTariff,
+            Bike bike4 = new Bike(null, "Santa Cruz v10", BikeType.MOUNTAIN, BikeStatus.AVAILABLE, hourlyTariff,
                     List.of(new Image("https://bikebrothers.es/435-home_default/santa-cruz-v-cc-kit-dh-x.jpg", true)));
             Bike bike5 = new Bike(null, "Trek Domane AL 2", BikeType.ROAD, BikeStatus.MAINTENANCE, hourlyTariff,
                     List.of(new Image("https://bicicletascarmona.com/wp-content/uploads/2022/03/domane_al.jpeg", true)));

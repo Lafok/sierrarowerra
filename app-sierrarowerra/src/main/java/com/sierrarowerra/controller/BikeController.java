@@ -1,8 +1,6 @@
 package com.sierrarowerra.controller;
 
-import com.sierrarowerra.model.dto.bike.BikeRequestDto;
-import com.sierrarowerra.model.dto.bike.BikeResponseDto;
-import com.sierrarowerra.model.dto.bike.BikeStatusUpdateRequestDto;
+import com.sierrarowerra.model.dto.bike.*;
 import com.sierrarowerra.services.bike.BikeService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -23,7 +21,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/bikes")
@@ -96,12 +93,8 @@ public class BikeController {
     @Operation(summary = "Set a primary image for a bike (Admin only)")
     @PatchMapping("/{id}/images/primary")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<BikeResponseDto> setPrimaryImage(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        String imageUrl = body.get("imageUrl");
-        if (imageUrl == null) {
-            return ResponseEntity.badRequest().build();
-        }
-        return bikeService.setPrimaryImage(id, imageUrl)
+    public ResponseEntity<BikeResponseDto> setPrimaryImage(@PathVariable Long id, @Valid @RequestBody SetPrimaryImageRequestDto request) {
+        return bikeService.setPrimaryImage(id, request.getImageUrl())
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -109,12 +102,8 @@ public class BikeController {
     @Operation(summary = "Delete an image from a bike (Admin only)")
     @DeleteMapping("/{id}/images")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<BikeResponseDto> deleteImage(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        String imageUrl = body.get("imageUrl");
-        if (imageUrl == null) {
-            return ResponseEntity.badRequest().build();
-        }
-        return bikeService.deleteImage(id, imageUrl)
+    public ResponseEntity<BikeResponseDto> deleteImage(@PathVariable Long id, @Valid @RequestBody ImageDeleteRequestDto request) {
+        return bikeService.deleteImage(id, request.getImageUrl())
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

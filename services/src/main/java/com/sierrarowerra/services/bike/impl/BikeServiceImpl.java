@@ -20,8 +20,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.net.URI;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
@@ -180,12 +178,14 @@ public class BikeServiceImpl implements BikeService {
                         bike.getImages().getFirst().setPrimary(true);
                     }
 
-                    try {
-                        String path = Paths.get(new URI(imageUrl).getPath()).toString();
-                        String fileName = path.substring(path.indexOf("/uploads/") + "/uploads/".length());
-                        fileStorageService.deleteFile(fileName);
-                    } catch (Exception e) {
-                        throw new RuntimeException("Could not extract file name from URL: " + imageUrl, e);
+                    // Only try to delete from file storage if it's a local file
+                    if (imageUrl.startsWith("/uploads/")) {
+                        try {
+                            String fileName = imageUrl.substring("/uploads/".length());
+                            fileStorageService.deleteFile(fileName);
+                        } catch (Exception e) {
+                            throw new RuntimeException("Could not delete file from storage: " + imageUrl, e);
+                        }
                     }
 
                     Bike savedBike = bikeRepository.save(bike);

@@ -33,6 +33,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<User> findAllAdmins(Pageable pageable) {
+        return userRepository.findAllByRoles_Name(ERole.ROLE_ADMIN, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<User> findByUsername(String username) {
         return userRepository.findByUsername(username);
     }

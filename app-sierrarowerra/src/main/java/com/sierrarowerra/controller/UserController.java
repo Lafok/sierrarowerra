@@ -47,6 +47,14 @@ public class UserController {
         return pageMapper.toDto(userPage, userMapper::toDto);
     }
 
+    @Operation(summary = "Get a paginated list of all admins (Admin only)")
+    @GetMapping("/admins")
+    @PreAuthorize("hasRole('ADMIN')")
+    public PageDto<UserDto> getAllAdmins(@ParameterObject @PageableDefault(sort = "username", direction = Sort.Direction.ASC) Pageable pageable) {
+        Page<User> userPage = userService.findAllAdmins(pageable);
+        return pageMapper.toDto(userPage, userMapper::toDto);
+    }
+
     @Operation(summary = "Get a specific user by their ID (Admin only)")
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")

@@ -6,6 +6,7 @@ import com.sierrarowerra.domain.user.UserRepository;
 import com.sierrarowerra.model.enums.ERole;
 import com.sierrarowerra.domain.user.Role;
 import com.sierrarowerra.domain.user.User;
+import com.sierrarowerra.services.exceptions.UsernameAlreadyExistsException;
 import com.sierrarowerra.services.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -47,6 +48,20 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public Optional<User> findById(Long id) {
         return userRepository.findById(id);
+    }
+
+    @Override
+    @Transactional
+    public User updateUsername(Long userId, String newUsername) {
+        if (userRepository.existsByUsername(newUsername)) {
+            throw new UsernameAlreadyExistsException("Error: Username is already taken!");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+
+        user.setUsername(newUsername);
+        return userRepository.save(user);
     }
 
     @Override

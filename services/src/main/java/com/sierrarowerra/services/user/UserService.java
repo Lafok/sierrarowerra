@@ -16,6 +16,8 @@ public interface UserService {
 
     Optional<User> findById(Long id);
 
+    User updateUsername(Long userId, String newUsername);
+
     User updateUserRoles(Long id, Set<String> roles);
 
     void deleteUser(Long id);

@@ -1,6 +1,8 @@
 package com.sierrarowerra.domain.user;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -25,8 +27,7 @@ import java.util.Set;
 @Table(name = "users",
        uniqueConstraints = {
            @UniqueConstraint(columnNames = "username"),
-           @UniqueConstraint(columnNames = "email"),
-           @UniqueConstraint(columnNames = "phone")
+           @UniqueConstraint(columnNames = "email")
        })
 public class User {
 
@@ -43,13 +44,14 @@ public class User {
     @Email
     private String email;
 
-    @NotBlank
     @Size(max = 15)
     private String phone;
 
-    @NotBlank
     @Size(max = 120)
     private String password;
+
+    @Enumerated(EnumType.STRING)
+    private AuthProvider provider;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_roles",
@@ -57,10 +59,9 @@ public class User {
                inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
 
-    public User(String username, String email, String phone, String password) {
+    public User(String username, String email, String password) {
         this.username = username;
         this.email = email;
-        this.phone = phone;
         this.password = password;
     }
 }

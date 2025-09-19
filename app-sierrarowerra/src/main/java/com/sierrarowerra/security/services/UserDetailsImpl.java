@@ -3,18 +3,24 @@ package com.sierrarowerra.security.services;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sierrarowerra.domain.user.User;
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.oidc.OidcIdToken;
+import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 import java.io.Serial;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Getter
-public class UserDetailsImpl implements UserDetails {
+@Setter
+public class UserDetailsImpl implements OidcUser, UserDetails {
     @Serial
     private static final long serialVersionUID = 1L;
 
@@ -25,6 +31,11 @@ public class UserDetailsImpl implements UserDetails {
     private final String password;
 
     private final Collection<? extends GrantedAuthority> authorities;
+
+    private Map<String, Object> attributes;
+    private Map<String, Object> claims;
+    private OidcUserInfo userInfo;
+    private OidcIdToken idToken;
 
     public UserDetailsImpl(Long id, String username, String email, String password,
                            Collection<? extends GrantedAuthority> authorities) {
@@ -46,6 +57,20 @@ public class UserDetailsImpl implements UserDetails {
                 user.getEmail(),
                 user.getPassword(),
                 authorities);
+    }
+
+    public static UserDetailsImpl build(User user, OidcUser oidcUser) {
+        UserDetailsImpl userDetails = build(user);
+        userDetails.setAttributes(oidcUser.getAttributes());
+        userDetails.setClaims(oidcUser.getClaims());
+        userDetails.setUserInfo(oidcUser.getUserInfo());
+        userDetails.setIdToken(oidcUser.getIdToken());
+        return userDetails;
+    }
+
+    @Override
+    public Map<String, Object> getAttributes() {
+        return attributes;
     }
 
     @Override
@@ -89,5 +114,10 @@ public class UserDetailsImpl implements UserDetails {
         if (o == null || getClass() != o.getClass()) return false;
         UserDetailsImpl user = (UserDetailsImpl) o;
         return Objects.equals(id, user.id);
+    }
+
+    @Override
+    public String getName() {
+        return String.valueOf(id);
     }
 }

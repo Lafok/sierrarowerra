@@ -1,17 +1,17 @@
 package com.sierrarowerra.controller;
 
-import com.sierrarowerra.domain.user.RoleRepository;
-import com.sierrarowerra.domain.user.UserRepository;
-import com.sierrarowerra.model.enums.ERole;
+import com.sierrarowerra.domain.user.AuthProvider;
 import com.sierrarowerra.domain.user.Role;
+import com.sierrarowerra.domain.user.RoleRepository;
 import com.sierrarowerra.domain.user.User;
-import com.sierrarowerra.model.dto.auth.JwtResponse;
-import com.sierrarowerra.model.dto.auth.LoginRequest;
+import com.sierrarowerra.domain.user.UserRepository;
+import com.sierrarowerra.model.dto.auth.*;
 import com.sierrarowerra.model.dto.common.MessageResponse;
 import com.sierrarowerra.model.dto.user.PasswordChangeRequest;
-import com.sierrarowerra.model.dto.auth.SignupRequest;
+import com.sierrarowerra.model.enums.ERole;
 import com.sierrarowerra.security.jwt.JwtUtils;
 import com.sierrarowerra.security.services.UserDetailsImpl;
+import com.sierrarowerra.services.user.PasswordResetTokenService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -51,6 +52,9 @@ public class AuthController {
 
     @Autowired
     JwtUtils jwtUtils;
+
+    @Autowired
+    PasswordResetTokenService passwordResetTokenService;
 
     @Operation(summary = "Authenticate user and get JWT token")
     @PostMapping("/signin")
@@ -97,17 +101,12 @@ public class AuthController {
                     .body(new MessageResponse("Error: Email is already in use!"));
         }
 
-        if (userRepository.existsByPhone(signUpRequest.getPhone())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Error: Phone number is already in use!"));
-        }
-
-        // Create new user's account
         User user = new User(signUpRequest.getUsername(),
                 signUpRequest.getEmail(),
-                signUpRequest.getPhone(),
                 encoder.encode(signUpRequest.getPassword()));
+
+        user.setPhone(signUpRequest.getPhone());
+        user.setProvider(AuthProvider.local);
 
         Set<String> strRoles = signUpRequest.getRole();
         Set<Role> roles = new HashSet<>();
@@ -134,6 +133,38 @@ public class AuthController {
         userRepository.save(user);
 
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+    }
+
+    @Operation(summary = "Request a password reset")
+    @PostMapping("/forgot-password")
+    @SecurityRequirements
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
+        Optional<User> userOptional = userRepository.findByEmail(forgotPasswordRequest.getEmail());
+
+        userOptional.ifPresent(passwordResetTokenService::createPasswordResetTokenForUser);
+
+        return ResponseEntity.ok(new MessageResponse("If an account with that email exists, a password reset link has been sent."));
+    }
+
+    @Operation(summary = "Reset password using a token")
+    @PostMapping("/reset-password")
+    @SecurityRequirements
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest resetPasswordRequest) {
+        String token = resetPasswordRequest.getToken();
+        passwordResetTokenService.validatePasswordResetToken(token);
+
+        Optional<User> userOptional = passwordResetTokenService.getUserByPasswordResetToken(token);
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Invalid token!"));
+        }
+
+        User user = userOptional.get();
+        user.setPassword(encoder.encode(resetPasswordRequest.getNewPassword()));
+        userRepository.save(user);
+
+        passwordResetTokenService.deleteToken(token);
+
+        return ResponseEntity.ok(new MessageResponse("Password has been reset successfully!"));
     }
 
     @Operation(summary = "Change user password")

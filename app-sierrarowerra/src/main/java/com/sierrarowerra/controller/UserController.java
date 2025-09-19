@@ -4,6 +4,7 @@ import com.sierrarowerra.domain.user.User;
 import com.sierrarowerra.model.dto.common.PageDto;
 import com.sierrarowerra.model.dto.user.UserDto;
 import com.sierrarowerra.model.dto.user.UserRolesRequestDto;
+import com.sierrarowerra.model.dto.user.UsernameChangeRequest;
 import com.sierrarowerra.security.services.UserDetailsImpl;
 import com.sierrarowerra.services.user.UserService;
 import com.sierrarowerra.services.common.mapper.PageMapper;
@@ -37,6 +38,14 @@ public class UserController {
                 .map(userMapper::toDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "Update current user's username")
+    @PutMapping("/me/username")
+    public ResponseEntity<UserDto> updateMyUsername(@AuthenticationPrincipal UserDetailsImpl currentUser,
+                                                  @Valid @RequestBody UsernameChangeRequest request) {
+        User updatedUser = userService.updateUsername(currentUser.getId(), request.getNewUsername());
+        return ResponseEntity.ok(userMapper.toDto(updatedUser));
     }
 
     @Operation(summary = "Get a paginated list of all users (Admin only)")

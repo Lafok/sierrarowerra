@@ -33,6 +33,10 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         this.jwtUtils = jwtUtils;
         this.httpCookieOAuth2AuthorizationRequestRepository = httpCookieOAuth2AuthorizationRequestRepository;
         this.authorizedRedirectUri = authorizedRedirectUri;
+
+        // --- ВОТ КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ ---
+        // Мы явно устанавливаем URL по умолчанию, чтобы он не был равен "/"
+        this.setDefaultTargetUrl(authorizedRedirectUri);
     }
 
     @Override
@@ -49,13 +53,16 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     }
 
     protected String determineTargetUrl(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
+        // Сначала пытаемся получить URL из cookie
         Optional<String> redirectUri = CookieUtils.getCookie(request, REDIRECT_URI_PARAM_COOKIE_NAME)
                 .map(Cookie::getValue);
 
+        // Проверяем, что если URL из cookie есть, он разрешен
         if(redirectUri.isPresent() && !isAuthorizedRedirectUri(redirectUri.get())) {
             throw new IllegalArgumentException("Sorry! We've got an Unauthorized Redirect URI and can't proceed with the authentication");
         }
 
+        // Если cookie нет, используется URL по умолчанию, который мы установили в конструкторе
         String targetUrl = redirectUri.orElse(getDefaultTargetUrl());
 
         String token = jwtUtils.generateJwtToken(authentication);
@@ -74,6 +81,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         URI clientRedirectUri = URI.create(uri);
         URI authorizedUri = URI.create(authorizedRedirectUri);
 
+        // Сравниваем только хост и порт для гибкости
         return authorizedUri.getHost().equalsIgnoreCase(clientRedirectUri.getHost())
                 && authorizedUri.getPort() == clientRedirectUri.getPort();
     }

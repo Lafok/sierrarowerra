@@ -1,3 +1,5 @@
+// C:/Users/pavel/IdeaProjects/sierrarowerra/app-sierrarowerra/src/main/java/com/sierrarowerra/config/SecurityConfig.java
+
 package com.sierrarowerra.config;
 
 import com.sierrarowerra.security.jwt.AuthEntryPointJwt;
@@ -61,7 +63,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.cors(Customizer.withDefaults()) // Enable CORS configuration from WebConfig
+        http.cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
@@ -76,9 +78,11 @@ public class SecurityConfig {
                 )
                 .oauth2Login(oauth2 ->
                         oauth2
+                                // --- ВОТ ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ ---
+                                // Мы возвращаем этот блок, чтобы зарегистрировать наш cookie-репозиторий,
+                                // но НЕ указываем .baseUri(), чтобы использовались стандартные URL
                                 .authorizationEndpoint(authorization ->
                                         authorization
-                                                .baseUri("/oauth2/authorize")
                                                 .authorizationRequestRepository(httpCookieOAuth2AuthorizationRequestRepository)
                                 )
                                 .userInfoEndpoint(userInfo ->

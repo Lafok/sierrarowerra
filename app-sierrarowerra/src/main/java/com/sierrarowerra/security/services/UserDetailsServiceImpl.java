@@ -1,8 +1,9 @@
 package com.sierrarowerra.security.services;
 
-import com.sierrarowerra.domain.user.UserRepository;
 import com.sierrarowerra.domain.user.User;
+import com.sierrarowerra.domain.user.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -19,6 +20,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + username));
+
+        if (!user.isEnabled()) {
+            throw new DisabledException("User is not activated. Please check your email for the verification link.");
+        }
 
         return UserDetailsImpl.build(user);
     }

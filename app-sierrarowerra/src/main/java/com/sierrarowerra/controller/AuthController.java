@@ -12,6 +12,7 @@ import com.sierrarowerra.model.enums.ERole;
 import com.sierrarowerra.security.jwt.JwtUtils;
 import com.sierrarowerra.security.services.UserDetailsImpl;
 import com.sierrarowerra.services.user.PasswordResetTokenService;
+import com.sierrarowerra.services.user.UserVerificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
@@ -24,10 +25,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -54,6 +52,9 @@ public class AuthController {
 
     @Autowired
     PasswordResetTokenService passwordResetTokenService;
+
+    @Autowired
+    UserVerificationService userVerificationService;
 
     @Operation(summary = "Authenticate user and get JWT token")
     @PostMapping("/signin")
@@ -84,7 +85,7 @@ public class AuthController {
                 roles));
     }
 
-    @Operation(summary = "Register a new user")
+    @Operation(summary = "Register a new user and send verification email")
     @PostMapping("/signup")
     @SecurityRequirements
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
@@ -100,7 +101,7 @@ public class AuthController {
                     .body(new MessageResponse("Error: Email is already in use!"));
         }
 
-        // Create new user's account
+        // Create new user's account (it will be disabled by default)
         User user = new User(signUpRequest.getUsername(),
                 signUpRequest.getEmail(),
                 encoder.encode(signUpRequest.getPassword()));
@@ -108,15 +109,29 @@ public class AuthController {
         user.setPhone(signUpRequest.getPhone());
         user.setProvider(AuthProvider.local);
 
-        // --- ИСПРАВЛЕНИЕ БЕЗОПАСНОСТИ ---
-        // Мы больше не читаем роли из запроса. Вместо этого мы принудительно назначаем роль USER.
         Role userRole = roleRepository.findByName(ERole.ROLE_USER)
                 .orElseThrow(() -> new RuntimeException("Error: Role ROLE_USER is not found."));
         user.setRoles(Set.of(userRole));
 
-        userRepository.save(user);
+        // Create verification token and send email
+        userVerificationService.createVerificationTokenForUser(user);
 
-        return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+        return ResponseEntity.ok(new MessageResponse("User registered successfully! Please check your email to verify your account."));
+    }
+
+    @Operation(summary = "Verify user's email using a token")
+    @GetMapping("/verify-email")
+    @SecurityRequirements
+    public ResponseEntity<?> verifyUser(@RequestParam("token") String token) {
+        boolean isVerified = userVerificationService.verifyUser(token);
+
+        if (isVerified) {
+            return ResponseEntity.ok(new MessageResponse("Email verified successfully! You can now log in."));
+        } else {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Error: Invalid or expired verification token."));
+        }
     }
 
     @Operation(summary = "Request a password reset")

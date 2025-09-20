@@ -27,6 +27,7 @@ public class UserDetailsImpl implements OidcUser, UserDetails {
     private final Long id;
     private final String username;
     private final String email;
+    private final boolean enabled;
     @JsonIgnore
     private final String password;
 
@@ -38,12 +39,13 @@ public class UserDetailsImpl implements OidcUser, UserDetails {
     private OidcIdToken idToken;
 
     public UserDetailsImpl(Long id, String username, String email, String password,
-                           Collection<? extends GrantedAuthority> authorities) {
+                           Collection<? extends GrantedAuthority> authorities, boolean enabled) {
         this.id = id;
         this.username = username;
         this.email = email;
         this.password = password;
         this.authorities = authorities;
+        this.enabled = enabled;
     }
 
     public static UserDetailsImpl build(User user) {
@@ -56,7 +58,8 @@ public class UserDetailsImpl implements OidcUser, UserDetails {
                 user.getUsername(),
                 user.getEmail(),
                 user.getPassword(),
-                authorities);
+                authorities,
+                user.isEnabled());
     }
 
     public static UserDetailsImpl build(User user, OidcUser oidcUser) {
@@ -105,7 +108,7 @@ public class UserDetailsImpl implements OidcUser, UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return this.enabled;
     }
 
     @Override

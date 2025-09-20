@@ -16,19 +16,29 @@ public class EmailServiceImpl implements EmailService {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
-    @Value("${app.oauth2.authorizedRedirectUri}")
+    @Value("${app.frontend.base-url}") // Using a more generic base URL
     private String frontendBaseUrl;
 
     @Override
     public void sendPasswordResetEmail(String to, String token) {
+        String resetUrl = frontendBaseUrl + "/reset-password?token=" + token;
+        String text = "To reset your password, click the link below:\n" + resetUrl;
+        sendEmail(to, "Password Reset Request", text);
+    }
+
+    @Override
+    public void sendVerificationEmail(String to, String token) {
+        String verificationUrl = frontendBaseUrl + "/verify-email?token=" + token;
+        String text = "To verify your email address, click the link below:\n" + verificationUrl;
+        sendEmail(to, "Email Verification", text);
+    }
+
+    private void sendEmail(String to, String subject, String text) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromEmail);
         message.setTo(to);
-        message.setSubject("Password Reset Request");
-
-        String resetUrl = frontendBaseUrl + "/reset-password?token=" + token;
-        message.setText("To reset your password, click the link below:\n" + resetUrl);
-
+        message.setSubject(subject);
+        message.setText(text);
         mailSender.send(message);
     }
 }

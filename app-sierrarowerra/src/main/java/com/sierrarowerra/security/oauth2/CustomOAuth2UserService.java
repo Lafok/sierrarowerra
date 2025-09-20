@@ -11,6 +11,7 @@ import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.Optional;
@@ -26,6 +27,7 @@ public class CustomOAuth2UserService extends OidcUserService {
     private RoleRepository roleRepository;
 
     @Override
+    @Transactional
     public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {
         OidcUser oidcUser = super.loadUser(userRequest);
 
@@ -49,12 +51,19 @@ public class CustomOAuth2UserService extends OidcUserService {
         User user;
         if (userOptional.isPresent()) {
             user = userOptional.get();
-            if (!user.getProvider().equals(AuthProvider.google)) {
-                throw new OAuth2AuthenticationProcessingException("Looks like you're signed up with " +
-                        user.getProvider() + " account. Please use your " + user.getProvider() +
-                        " account to login.");
+            if (user.getProvider().equals(AuthProvider.local)) {
+                // This is our key scenario: linking a local account
+                if (!user.isEnabled()) {
+                    throw new OAuth2AuthenticationProcessingException("Your account is not activated. Please check your email for the verification link.");
+                }
+                // The local account is verified, so we can safely link it.
+                user.setProvider(AuthProvider.google);
+                user = userRepository.save(user);
             }
+            // If provider is already google, we do nothing.
+
         } else {
+            // If user is not found, register a new one.
             user = registerNewUser(oidcUser);
         }
 
@@ -66,6 +75,9 @@ public class CustomOAuth2UserService extends OidcUserService {
 
         user.setProvider(AuthProvider.google);
         user.setEmail(oidcUser.getEmail());
+
+        // Since the user is registering via Google, we trust the email is verified.
+        user.setEnabled(true);
 
         String username = generateUsername(oidcUser.getEmail());
         user.setUsername(username);

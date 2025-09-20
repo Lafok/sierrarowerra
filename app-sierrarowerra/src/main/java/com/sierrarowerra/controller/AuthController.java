@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -28,6 +29,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -67,6 +69,16 @@ public class AuthController {
                 .or(() -> userRepository.findByEmail(login))
                 .orElseThrow(() -> new UsernameNotFoundException("User Not Found with login: " + login));
 
+        // --- УЛУЧШЕННАЯ ПРОВЕРКА --- 
+        if (!user.isEnabled()) {
+            // Если аккаунт не активирован, не пытаемся проверить пароль, а сразу возвращаем ошибку
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of(
+                        "errorCode", "ACCOUNT_NOT_ACTIVATED",
+                        "message", "Account is not activated. Please check your email for the verification link."
+                    ));
+        }
+
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(user.getUsername(), loginRequest.getPassword()));
 
@@ -101,7 +113,6 @@ public class AuthController {
                     .body(new MessageResponse("Error: Email is already in use!"));
         }
 
-        // Create new user's account (it will be disabled by default)
         User user = new User(signUpRequest.getUsername(),
                 signUpRequest.getEmail(),
                 encoder.encode(signUpRequest.getPassword()));
@@ -113,7 +124,6 @@ public class AuthController {
                 .orElseThrow(() -> new RuntimeException("Error: Role ROLE_USER is not found."));
         user.setRoles(Set.of(userRole));
 
-        // Create verification token and send email
         userVerificationService.createVerificationTokenForUser(user);
 
         return ResponseEntity.ok(new MessageResponse("User registered successfully! Please check your email to verify your account."));
@@ -132,6 +142,20 @@ public class AuthController {
                     .badRequest()
                     .body(new MessageResponse("Error: Invalid or expired verification token."));
         }
+    }
+
+    @Operation(summary = "Resend verification email")
+    @PostMapping("/resend-verification")
+    @SecurityRequirements
+    public ResponseEntity<?> resendVerificationEmail(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        userRepository.findByEmail(email).ifPresent(user -> {
+            if (!user.isEnabled()) {
+                userVerificationService.createVerificationTokenForUser(user);
+            }
+        });
+        // We always return a success message to prevent email enumeration attacks
+        return ResponseEntity.ok(new MessageResponse("New verification link has been sent."));
     }
 
     @Operation(summary = "Request a password reset")

@@ -21,12 +21,11 @@ public class SignupRequest {
     @Schema(description = "Email for the new account", example = "newuser@example.com")
     private String email;
 
-    @NotBlank
-    @Size(min = 10, max = 15)
-    @Schema(description = "Phone number for the new account", example = "1234567890")
+    @Size(max = 15) // Phone is now optional
+    @Schema(description = "Phone number for the new account (optional)", example = "1234567890")
     private String phone;
 
-    @Schema(description = "Set of roles for the new user. If not specified, 'ROLE_USER' will be assigned.", example = "[\"user\"]")
+    @Schema(description = "Set of roles for the new user. This field is ignored; 'ROLE_USER' will be assigned by default.", example = "[\"user\"]")
     private Set<String> role;
 
     @NotBlank

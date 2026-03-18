@@ -10,6 +10,8 @@ import com.sierrarowerra.model.dto.user.UserDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.ZoneOffset; // <-- Добавлен импорт
+
 @Component
 @RequiredArgsConstructor
 public class BookingMapper {
@@ -27,7 +29,11 @@ public class BookingMapper {
         dto.setStartDate(booking.getBookingStartDate());
         dto.setEndDate(booking.getBookingEndDate());
         dto.setStatus(booking.getStatus());
-        dto.setCreatedAt(booking.getCreatedAt()); // Set creation timestamp
+
+        // Исправлено здесь: конвертация Instant -> ZonedDateTime (UTC)
+        if (booking.getCreatedAt() != null) {
+            dto.setCreatedAt(booking.getCreatedAt().atZone(ZoneOffset.UTC));
+        }
 
         // Find and set payment details for active bookings
         paymentRepository.findByBookingId(booking.getId()).ifPresent(payment -> {
@@ -63,7 +69,11 @@ public class BookingMapper {
         dto.setStartDate(bookingHistory.getBookingStartDate());
         dto.setEndDate(bookingHistory.getBookingEndDate());
         dto.setReason(bookingHistory.getReason());
-        dto.setCreatedAt(bookingHistory.getCreatedAt()); // Set creation timestamp
+
+        // Исправлено здесь: конвертация Instant -> ZonedDateTime (UTC)
+        if (bookingHistory.getCreatedAt() != null) {
+            dto.setCreatedAt(bookingHistory.getCreatedAt().atZone(ZoneOffset.UTC));
+        }
 
         // Find and set historical payment details using the original bookingId
         paymentHistoryRepository.findByBookingId(bookingHistory.getBookingId()).ifPresent(paymentHistory -> {

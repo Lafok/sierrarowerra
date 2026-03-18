@@ -123,7 +123,7 @@ public class AuthController {
 
         Role userRole = roleRepository.findByName(ERole.ROLE_USER)
                 .orElseThrow(() -> new RuntimeException("Error: Role ROLE_USER is not found."));
-        user.setRoles(Set.of(userRole));
+        user.setRoles(new java.util.HashSet<>(java.util.Collections.singletonList(userRole)));
 
         userRepository.save(user);
 

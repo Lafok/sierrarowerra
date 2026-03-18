@@ -98,6 +98,13 @@ public class BikeServiceImpl implements BikeService {
             throw new IllegalStateException("Cannot delete a bike with associated bookings.");
         }
         bikeRepository.deleteById(id);
+        try {
+            fileStorageService.deleteDirectory(String.valueOf(id));
+        } catch (Exception e) {
+            // Log error but don't fail the transaction if file deletion fails
+            // Consider using a logger here
+            System.err.println("Failed to delete directory for bike " + id + ": " + e.getMessage());
+        }
     }
 
     @Override

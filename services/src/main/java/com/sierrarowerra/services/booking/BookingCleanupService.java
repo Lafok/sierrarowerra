@@ -2,6 +2,7 @@ package com.sierrarowerra.services.booking;
 
 import com.sierrarowerra.domain.booking.BookingHistoryRepository;
 import com.sierrarowerra.domain.booking.BookingRepository;
+import com.sierrarowerra.domain.payment.Payment;
 import com.sierrarowerra.domain.payment.PaymentHistoryRepository;
 import com.sierrarowerra.domain.payment.PaymentRepository;
 import com.sierrarowerra.domain.booking.Booking;
@@ -17,8 +18,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -36,42 +38,29 @@ public class BookingCleanupService {
     public void cleanupExpiredBookings() {
         logger.info("Running scheduled job to archive expired bookings...");
 
-        List<Booking> expiredBookings = bookingRepository.findByStatusAndExpiresAtBefore(BookingStatus.PENDING_PAYMENT, LocalDateTime.now());
+        List<Booking> expiredBookings = bookingRepository.findByStatusAndExpiresAtBefore(BookingStatus.PENDING_PAYMENT, Instant.now());
 
         if (expiredBookings.isEmpty()) {
             logger.info("No expired bookings to archive.");
             return;
         }
 
+        List<Long> expiredBookingIds = expiredBookings.stream().map(Booking::getId).toList();
+        Map<Long, Payment> paymentMap = paymentRepository.findAllByBookingIdIn(expiredBookingIds).stream()
+                .collect(java.util.stream.Collectors.toMap(p -> p.getBooking().getId(), p -> p));
+
         for (Booking booking : expiredBookings) {
-            logger.warn("Booking {} has expired due to non-payment. Archiving...", booking.getId());
+            logger.warn("Booking {} has expired due to non-payment. Setting status to EXPIRED.", booking.getId());
 
-            BookingHistory history = new BookingHistory(
-                    null,
-                    booking.getId(),
-                    booking.getBike(),
-                    booking.getUser(),
-                    booking.getBookingStartDate(),
-                    booking.getBookingEndDate(),
-                    ArchivalReason.PAYMENT_EXPIRED,
-                    booking.getCreatedAt() // Pass the original creation timestamp
-            );
-            bookingHistoryRepository.save(history);
+            booking.setStatus(BookingStatus.EXPIRED);
+            bookingRepository.save(booking);
 
-            paymentRepository.findByBookingId(booking.getId()).ifPresent(payment -> {
-                PaymentHistory paymentHistory = new PaymentHistory(
-                        null,
-                        booking.getId(),
-                        payment.getAmount(),
-                        payment.getCurrency(),
-                        PaymentStatus.FAILED
-                );
-                paymentHistoryRepository.save(paymentHistory);
-                paymentRepository.delete(payment);
-                logger.info("Archived and deleted payment {} for expired booking {}", payment.getId(), booking.getId());
-            });
-
-            bookingRepository.delete(booking);
+            Payment payment = paymentMap.get(booking.getId());
+            if (payment != null && payment.getStatus() == PaymentStatus.PENDING) {
+                payment.setStatus(PaymentStatus.FAILED);
+                paymentRepository.save(payment);
+                logger.info("Marked payment {} as FAILED for expired booking {}", payment.getId(), booking.getId());
+            }
         }
 
         logger.info("Finished archiving {} expired bookings.", expiredBookings.size());

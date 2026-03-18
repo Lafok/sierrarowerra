@@ -65,36 +65,37 @@ public class AuthController {
 
         String login = loginRequest.getLogin();
 
-        User user = userRepository.findByUsername(login)
-                .or(() -> userRepository.findByEmail(login))
-                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with login: " + login));
+        try {
+            User user = userRepository.findByUsername(login)
+                    .or(() -> userRepository.findByEmail(login))
+                    .orElseThrow(() -> new UsernameNotFoundException("User Not Found with login: " + login));
 
-        // --- УЛУЧШЕННАЯ ПРОВЕРКА --- 
-        if (!user.isEnabled()) {
-            // Если аккаунт не активирован, не пытаемся проверить пароль, а сразу возвращаем ошибку
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(user.getUsername(), loginRequest.getPassword()));
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String jwt = jwtUtils.generateJwtToken(authentication);
+
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            List<String> roles = userDetails.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(new JwtResponse(jwt,
+                    userDetails.getId(),
+                    userDetails.getUsername(),
+                    userDetails.getEmail(),
+                    roles));
+        } catch (org.springframework.security.authentication.DisabledException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of(
-                        "errorCode", "ACCOUNT_NOT_ACTIVATED",
-                        "message", "Account is not activated. Please check your email for the verification link."
+                            "errorCode", "ACCOUNT_NOT_ACTIVATED",
+                            "message", "Account is not activated. Please check your email for the verification link."
                     ));
+        } catch (org.springframework.security.core.AuthenticationException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new MessageResponse("Error: Invalid username or password!"));
         }
-
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(user.getUsername(), loginRequest.getPassword()));
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = jwtUtils.generateJwtToken(authentication);
-
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        List<String> roles = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(new JwtResponse(jwt,
-                userDetails.getId(),
-                userDetails.getUsername(),
-                userDetails.getEmail(),
-                roles));
     }
 
     @Operation(summary = "Register a new user and send verification email")
@@ -123,6 +124,8 @@ public class AuthController {
         Role userRole = roleRepository.findByName(ERole.ROLE_USER)
                 .orElseThrow(() -> new RuntimeException("Error: Role ROLE_USER is not found."));
         user.setRoles(Set.of(userRole));
+
+        userRepository.save(user);
 
         userVerificationService.createVerificationTokenForUser(user);
 

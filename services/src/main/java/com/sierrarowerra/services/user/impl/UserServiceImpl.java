@@ -70,19 +70,41 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id));
 
+        // Normalize roles to lowercase to handle variations like "Admin", "ADMIN", etc.
+        Set<String> normalizedRoles = strRoles == null ? new HashSet<>() :
+                strRoles.stream().map(String::toLowerCase).collect(Collectors.toSet());
+
+        boolean wasAdmin = user.getRoles().stream().anyMatch(role -> role.getName() == ERole.ROLE_ADMIN);
+        boolean willBeAdmin = normalizedRoles.contains("admin");
+
+        if (wasAdmin && !willBeAdmin && user.isEnabled()) {
+            long activeAdminCount = userRepository.countByRoles_NameAndEnabledTrue(ERole.ROLE_ADMIN);
+            if (activeAdminCount <= 1) {
+                throw new IllegalStateException("Cannot remove admin role from the last active administrator.");
+            }
+        }
+
         Set<Role> roles = new HashSet<>();
 
-        strRoles.forEach(role -> {
-            if (role.equals("admin")) {
-                Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
-                        .orElseThrow(() -> new RuntimeException("Error: Role 'ADMIN' is not found."));
-                roles.add(adminRole);
-            } else {
-                Role userRole = roleRepository.findByName(ERole.ROLE_USER)
-                        .orElseThrow(() -> new RuntimeException("Error: Role 'USER' is not found."));
-                roles.add(userRole);
-            }
-        });
+        if (normalizedRoles.isEmpty()) {
+             Role userRole = roleRepository.findByName(ERole.ROLE_USER)
+                     .orElseThrow(() -> new RuntimeException("Error: Role 'USER' is not found."));
+             roles.add(userRole);
+        } else {
+            normalizedRoles.forEach(role -> {
+                switch (role) {
+                    case "admin":
+                        Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
+                                .orElseThrow(() -> new RuntimeException("Error: Role 'ADMIN' is not found."));
+                        roles.add(adminRole);
+                        break;
+                    default:
+                        Role userRole = roleRepository.findByName(ERole.ROLE_USER)
+                                .orElseThrow(() -> new RuntimeException("Error: Role 'USER' is not found."));
+                        roles.add(userRole);
+                }
+            });
+        }
 
         user.setRoles(roles);
         return userRepository.save(user);
@@ -91,9 +113,28 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void deleteUser(Long id) {
-        if (bookingRepository.existsByUserId(id)) {
-            throw new IllegalStateException("Cannot delete user with active bookings.");
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id));
+
+        // SOFT DELETE: We disable the user because physical removal breaks foreign keys 
+        // in BookingHistory and PaymentHistory.
+        if (!user.isEnabled()) {
+             // Already disabled, nothing to do
+             return;
         }
-        userRepository.deleteById(id);
+
+        if (user.getRoles().stream().anyMatch(role -> role.getName() == ERole.ROLE_ADMIN)) {
+            long activeAdminCount = userRepository.countByRoles_NameAndEnabledTrue(ERole.ROLE_ADMIN);
+            if (activeAdminCount <= 1) {
+                throw new IllegalStateException("Cannot deactivate the last administrator.");
+            }
+        }
+
+        if (bookingRepository.existsByUserId(id)) {
+            throw new IllegalStateException("Cannot deactivate user with active bookings.");
+        }
+        
+        user.setEnabled(false);
+        userRepository.save(user);
     }
 }

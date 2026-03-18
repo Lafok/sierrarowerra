@@ -5,14 +5,15 @@ import com.sierrarowerra.domain.user.User;
 import com.sierrarowerra.model.enums.BookingStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -42,8 +43,8 @@ public class Booking {
     private BookingStatus status;
 
     @Column
-    private LocalDateTime expiresAt;
+    private Instant expiresAt;
 
     @Column(nullable = false)
-    private ZonedDateTime createdAt;
+    private Instant createdAt;
 }

@@ -39,7 +39,7 @@ public class StripeWebhookService {
         Payment payment = paymentRepository.findByBookingId(bookingId)
                 .orElseThrow(() -> new IllegalStateException("Payment not found for booking id: " + bookingId));
 
-        if (booking.getStatus() == BookingStatus.PENDING_PAYMENT) {
+        if (booking.getStatus() == BookingStatus.PENDING_PAYMENT || booking.getStatus() == BookingStatus.EXPIRED) {
             booking.setStatus(BookingStatus.CONFIRMED);
             booking.setExpiresAt(null);
             bookingRepository.save(booking);
@@ -47,9 +47,9 @@ public class StripeWebhookService {
             payment.setStatus(PaymentStatus.COMPLETED);
             paymentRepository.save(payment);
 
-            logger.info("Booking {} confirmed and payment {} marked as COMPLETED.", booking.getId(), payment.getId());
+            logger.info("Booking {} confirmed (was {}) and payment {} marked as COMPLETED.", booking.getId(), booking.getStatus(), payment.getId());
         } else {
-            logger.warn("Received successful payment webhook for booking {} which is not in PENDING_PAYMENT state (current: {}). Ignoring.", booking.getId(), booking.getStatus());
+            logger.warn("Received successful payment webhook for booking {} which is in {} state. Ignoring.", booking.getId(), booking.getStatus());
         }
     }
 

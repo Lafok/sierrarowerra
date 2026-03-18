@@ -8,8 +8,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
 
 @Data
 @NoArgsConstructor
@@ -44,5 +44,5 @@ public class BookingHistory {
     private ArchivalReason reason;
 
     @Column(nullable = false)
-    private ZonedDateTime createdAt;
+    private Instant createdAt;
 }

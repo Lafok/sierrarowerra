@@ -8,14 +8,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
-    @Query("SELECT b FROM Booking b WHERE b.bike.id = :bikeId AND b.bookingStartDate < :endDate AND b.bookingEndDate > :startDate")
+    @Query("SELECT b FROM Booking b WHERE b.bike.id = :bikeId " +
+           "AND b.status IN (com.sierrarowerra.model.enums.BookingStatus.CONFIRMED, com.sierrarowerra.model.enums.BookingStatus.PENDING_PAYMENT) " +
+           "AND b.bookingStartDate < :endDate AND b.bookingEndDate > :startDate")
     List<Booking> findOverlappingBookings(@Param("bikeId") Long bikeId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     boolean existsByBikeId(Long bikeId);
@@ -24,12 +26,14 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     Page<Booking> findByUserId(Long userId, Pageable pageable);
 
-    @Query("SELECT DISTINCT b.bike.id FROM Booking b WHERE b.bookingStartDate < :endDate AND b.bookingEndDate > :startDate")
+    @Query("SELECT DISTINCT b.bike.id FROM Booking b WHERE " +
+           "b.status IN (com.sierrarowerra.model.enums.BookingStatus.CONFIRMED, com.sierrarowerra.model.enums.BookingStatus.PENDING_PAYMENT) " +
+           "AND b.bookingStartDate < :endDate AND b.bookingEndDate > :startDate")
     List<Long> findBookedBikeIds(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     List<Booking> findAllByBookingEndDateBefore(LocalDate date);
 
-    List<Booking> findByStatusAndExpiresAtBefore(BookingStatus status, LocalDateTime expiresAt);
+    List<Booking> findByStatusAndExpiresAtBefore(BookingStatus status, Instant expiresAt);
 
     List<Booking> findByBikeIdAndStatus(Long bikeId, BookingStatus status);
 }

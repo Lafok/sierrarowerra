@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Comparator;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -77,6 +78,20 @@ public class FileStorageServiceImpl implements FileStorageService {
             }
         } catch (IOException ex) {
             throw new RuntimeException("Could not delete file " + fileName, ex);
+        }
+    }
+
+    @Override
+    public void deleteDirectory(String dirName) {
+        Path dirPath = this.fileStorageLocation.resolve(dirName).normalize();
+        if (Files.exists(dirPath)) {
+            try (Stream<Path> pathStream = Files.walk(dirPath)) {
+                pathStream.sorted(Comparator.reverseOrder())
+                        .map(Path::toFile)
+                        .forEach(java.io.File::delete);
+            } catch (IOException ex) {
+                throw new RuntimeException("Could not delete directory " + dirName, ex);
+            }
         }
     }
 }

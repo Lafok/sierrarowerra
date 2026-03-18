@@ -80,9 +80,36 @@ public class BikeController {
     @Operation(summary = "Upload an image for a bike (Admin only)")
     @PostMapping(value = "/{id}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<BikeResponseDto> uploadImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> uploadImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body("File is empty");
+        }
+
+        // Validate file size (e.g., max 5MB)
+        if (file.getSize() > 5 * 1024 * 1024) {
+            return ResponseEntity.badRequest().body("File size exceeds limit of 5MB");
+        }
+
+        // Validate content type
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            return ResponseEntity.badRequest().body("Only image files are allowed");
+        }
+
+        // Validate file extension
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || originalFilename.isBlank()) {
+            return ResponseEntity.badRequest().body("Filename is empty");
+        }
+        
+        String extension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
+        List<String> allowedExtensions = List.of("jpg", "jpeg", "png", "gif", "webp");
+        if (!allowedExtensions.contains(extension)) {
+            return ResponseEntity.badRequest().body("Invalid file extension. Allowed: " + allowedExtensions);
+        }
+
         try {
-            return bikeService.addImage(id, file.getBytes(), file.getOriginalFilename())
+            return bikeService.addImage(id, file.getBytes(), originalFilename)
                     .map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
         } catch (IOException e) {

@@ -44,6 +44,9 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.stream.Collectors;
 
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+
 @Service
 public class BookingServiceImpl implements BookingService {
 
@@ -56,12 +59,14 @@ public class BookingServiceImpl implements BookingService {
     private final PaymentRepository paymentRepository;
     private final PaymentHistoryRepository paymentHistoryRepository;
     private final BookingMapper bookingMapper;
+    private final TransactionTemplate transactionTemplate;
 
     private final String stripeSecretKey;
 
     public BookingServiceImpl(BookingRepository bookingRepository, BookingHistoryRepository bookingHistoryRepository,
                               BikeRepository bikeRepository, UserRepository userRepository, PaymentRepository paymentRepository,
                               PaymentHistoryRepository paymentHistoryRepository, BookingMapper bookingMapper,
+                              PlatformTransactionManager transactionManager,
                               @Value("${stripe.api.secret-key}") String stripeSecretKey) {
         this.bookingRepository = bookingRepository;
         this.bookingHistoryRepository = bookingHistoryRepository;
@@ -70,6 +75,7 @@ public class BookingServiceImpl implements BookingService {
         this.paymentRepository = paymentRepository;
         this.paymentHistoryRepository = paymentHistoryRepository;
         this.bookingMapper = bookingMapper;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.stripeSecretKey = stripeSecretKey;
     }
 
@@ -79,80 +85,89 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    @Transactional
     public PaymentInitiationResponseDto initiateBooking(BookingRequestDto request, Long userId) {
         logger.info("Initiating booking for user {} and bike {}", userId, request.getBikeId());
 
-        Bike bike = bikeRepository.findById(request.getBikeId())
-                .orElseThrow(() -> new IllegalArgumentException("Bike not found with id: " + request.getBikeId()));
+        // 1. First transaction scope: Create booking and payment record, then COMMIT
+        // This releases the PESSIMISTIC_WRITE lock on the bike before we talk to Stripe
+        BookingAndPayment result = transactionTemplate.execute(status -> {
+            Bike bike = bikeRepository.findAndLockById(request.getBikeId())
+                    .orElseThrow(() -> new IllegalArgumentException("Bike not found with id: " + request.getBikeId()));
 
-        if (bike.getStatus() != BikeStatus.AVAILABLE) {
-            throw new IllegalStateException("Bike is not available for booking. Current status: " + bike.getStatus());
-        }
+            if (bike.getStatus() != BikeStatus.AVAILABLE) {
+                throw new IllegalStateException("Bike is not available for booking. Current status: " + bike.getStatus());
+            }
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        List<Booking> overlappingBookings = bookingRepository.findOverlappingBookings(
-                request.getBikeId(),
-                request.getStartDate(),
-                request.getEndDate()
-        );
+            List<Booking> overlappingBookings = bookingRepository.findOverlappingBookings(
+                    request.getBikeId(),
+                    request.getStartDate(),
+                    request.getEndDate()
+            );
 
-        if (!overlappingBookings.isEmpty()) {
-            throw new IllegalStateException("Bike is already booked for the selected dates.");
-        }
+            if (!overlappingBookings.isEmpty()) {
+                throw new IllegalStateException("Bike is already booked for the selected dates.");
+            }
 
-        Tariff tariff = bike.getTariff();
-        long duration;
-        if (tariff.getType() == TariffType.DAILY) {
-            duration = ChronoUnit.DAYS.between(request.getStartDate(), request.getEndDate()) + 1;
-        } else {
-            duration = ChronoUnit.HOURS.between(request.getStartDate().atStartOfDay(), request.getEndDate().atStartOfDay());
-            if (duration == 0) duration = 1;
-        }
+            Tariff tariff = bike.getTariff();
+            long duration = ChronoUnit.DAYS.between(request.getStartDate(), request.getEndDate()) + 1;
+            if (duration <= 0) throw new IllegalArgumentException("Invalid duration");
 
-        BigDecimal totalAmount = tariff.getPrice().multiply(new BigDecimal(duration));
-        logger.info("Calculated payment amount: {} for a duration of {} {}", totalAmount, duration, tariff.getType());
+            BigDecimal totalAmount = tariff.getPrice().multiply(new BigDecimal(duration));
 
-        Booking newBooking = new Booking();
-        newBooking.setBike(bike);
-        newBooking.setUser(user);
-        newBooking.setBookingStartDate(request.getStartDate());
-        newBooking.setBookingEndDate(request.getEndDate());
-        newBooking.setStatus(BookingStatus.PENDING_PAYMENT);
-        newBooking.setExpiresAt(LocalDateTime.now().plusMinutes(15));
-        newBooking.setCreatedAt(ZonedDateTime.now(ZoneId.of("CET"))); // Set creation timestamp
-        Booking savedBooking = bookingRepository.save(newBooking);
+            Booking newBooking = new Booking();
+            newBooking.setBike(bike);
+            newBooking.setUser(user);
+            newBooking.setBookingStartDate(request.getStartDate());
+            newBooking.setBookingEndDate(request.getEndDate());
+            newBooking.setStatus(BookingStatus.PENDING_PAYMENT);
+            newBooking.setExpiresAt(Instant.now().plus(15, ChronoUnit.MINUTES));
+            newBooking.setCreatedAt(Instant.now());
+            Booking savedBooking = bookingRepository.save(newBooking);
 
-        Payment payment = new Payment();
-        payment.setBooking(savedBooking);
-        payment.setAmount(totalAmount);
-        payment.setCurrency("eur");
-        payment.setStatus(PaymentStatus.PENDING);
+            Payment payment = new Payment();
+            payment.setBooking(savedBooking);
+            payment.setAmount(totalAmount);
+            payment.setCurrency("eur");
+            payment.setStatus(PaymentStatus.PENDING);
+            paymentRepository.save(payment);
+            
+            return new BookingAndPayment(savedBooking, payment, totalAmount);
+        });
 
+        // 2. Network call to Stripe (Outside of any DB transaction)
         try {
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
-                    .setAmount(totalAmount.multiply(new BigDecimal(100)).longValue())
+                    .setAmount(result.totalAmount().multiply(new BigDecimal(100)).longValue())
                     .setCurrency("eur")
-                    .putMetadata("bookingId", savedBooking.getId().toString())
+                    .putMetadata("bookingId", result.booking().getId().toString())
                     .setAutomaticPaymentMethods(
                             PaymentIntentCreateParams.AutomaticPaymentMethods.builder().setEnabled(true).build()
                     )
                     .build();
 
             PaymentIntent paymentIntent = PaymentIntent.create(params);
-            payment.setPaymentIntentId(paymentIntent.getId());
-            paymentRepository.save(payment);
+            
+            // 3. Second transaction scope: Update payment with Intent ID
+            transactionTemplate.executeWithoutResult(status -> {
+                Payment paymentToUpdate = paymentRepository.findById(result.payment().getId()).orElseThrow();
+                paymentToUpdate.setPaymentIntentId(paymentIntent.getId());
+                paymentRepository.save(paymentToUpdate);
+            });
 
-            logger.info("Successfully created Stripe PaymentIntent {} for booking {}", paymentIntent.getId(), savedBooking.getId());
-            return new PaymentInitiationResponseDto(paymentIntent.getClientSecret(), savedBooking.getId());
+            logger.info("Successfully created Stripe PaymentIntent {} for booking {}", paymentIntent.getId(), result.booking().getId());
+            return new PaymentInitiationResponseDto(paymentIntent.getClientSecret(), result.booking().getId());
 
         } catch (StripeException e) {
-            logger.error("Error creating Stripe PaymentIntent for booking {}", savedBooking.getId(), e);
+            logger.error("Error creating Stripe PaymentIntent for booking {}", result.booking().getId(), e);
             throw new RuntimeException("Error communicating with payment provider.", e);
         }
     }
+
+    // Helper record to pass data between phases
+    private record BookingAndPayment(Booking booking, Payment payment, BigDecimal totalAmount) {}
 
     @Override
     @Transactional
@@ -182,6 +197,17 @@ public class BookingServiceImpl implements BookingService {
         bookingHistoryRepository.save(history);
 
         paymentRepository.findByBookingId(booking.getId()).ifPresent(payment -> {
+            // Cancel Stripe PaymentIntent if it's still pending
+            if (payment.getStatus() == PaymentStatus.PENDING && payment.getPaymentIntentId() != null) {
+                try {
+                    PaymentIntent intent = PaymentIntent.retrieve(payment.getPaymentIntentId());
+                    intent.cancel();
+                    logger.info("Cancelled Stripe PaymentIntent {} for booking {}", payment.getPaymentIntentId(), booking.getId());
+                } catch (StripeException e) {
+                    logger.error("Failed to cancel Stripe PaymentIntent {} for booking {}", payment.getPaymentIntentId(), booking.getId(), e);
+                }
+            }
+
             PaymentHistory paymentHistory = new PaymentHistory(
                     null,
                     booking.getId(),
@@ -199,7 +225,6 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    @Transactional
     public PaymentInitiationResponseDto extendBooking(Long bookingId, BookingExtensionRequestDto extensionRequest, Long currentUserId, Set<String> roles) {
         logger.info("Initiating extension for booking {} for user {} with new end date {}", bookingId, currentUserId, extensionRequest.getNewEndDate());
         Booking originalBooking = bookingRepository.findById(bookingId)
@@ -254,7 +279,7 @@ public class BookingServiceImpl implements BookingService {
 
         BookingResponseDto dto = bookingMapper.toDto(booking);
 
-        if (booking.getStatus() == BookingStatus.PENDING_PAYMENT && booking.getExpiresAt().isAfter(LocalDateTime.now())) {
+        if (booking.getStatus() == BookingStatus.PENDING_PAYMENT && booking.getExpiresAt().isAfter(Instant.now())) {
             paymentRepository.findByBookingId(booking.getId()).ifPresent(payment -> {
                 if (payment.getPaymentIntentId() != null) {
                     try {

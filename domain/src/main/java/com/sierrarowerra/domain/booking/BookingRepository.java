@@ -16,8 +16,8 @@ import java.util.List;
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     @Query("SELECT b FROM Booking b WHERE b.bike.id = :bikeId " +
-           "AND b.status IN (com.sierrarowerra.model.enums.BookingStatus.CONFIRMED, com.sierrarowerra.model.enums.BookingStatus.PENDING_PAYMENT) " +
-           "AND b.bookingStartDate < :endDate AND b.bookingEndDate > :startDate")
+            "AND b.status IN (com.sierrarowerra.model.enums.BookingStatus.CONFIRMED, com.sierrarowerra.model.enums.BookingStatus.PENDING_PAYMENT) " +
+            "AND b.bookingStartDate < :endDate AND b.bookingEndDate > :startDate")
     List<Booking> findOverlappingBookings(@Param("bikeId") Long bikeId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     boolean existsByBikeId(Long bikeId);
@@ -27,8 +27,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     Page<Booking> findByUserId(Long userId, Pageable pageable);
 
     @Query("SELECT DISTINCT b.bike.id FROM Booking b WHERE " +
-           "b.status IN (com.sierrarowerra.model.enums.BookingStatus.CONFIRMED, com.sierrarowerra.model.enums.BookingStatus.PENDING_PAYMENT) " +
-           "AND b.bookingStartDate < :endDate AND b.bookingEndDate > :startDate")
+            "b.status IN (com.sierrarowerra.model.enums.BookingStatus.CONFIRMED, com.sierrarowerra.model.enums.BookingStatus.PENDING_PAYMENT) " +
+            "AND b.bookingStartDate < :endDate AND b.bookingEndDate > :startDate")
     List<Long> findBookedBikeIds(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     List<Booking> findAllByBookingEndDateBefore(LocalDate date);
@@ -36,4 +36,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByStatusAndExpiresAtBefore(BookingStatus status, Instant expiresAt);
 
     List<Booking> findByBikeIdAndStatus(Long bikeId, BookingStatus status);
+
+    @Query("SELECT b FROM Booking b WHERE b.bike.id = :bikeId AND b.status IN :statuses")
+    List<Booking> findByBikeIdAndStatuses(@Param("bikeId") Long bikeId, @Param("statuses") List<BookingStatus> statuses);
 }

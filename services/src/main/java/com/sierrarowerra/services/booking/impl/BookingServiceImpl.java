@@ -133,7 +133,7 @@ public class BookingServiceImpl implements BookingService {
             payment.setCurrency("eur");
             payment.setStatus(PaymentStatus.PENDING);
             paymentRepository.save(payment);
-            
+
             return new BookingAndPayment(savedBooking, payment, totalAmount);
         });
 
@@ -149,7 +149,7 @@ public class BookingServiceImpl implements BookingService {
                     .build();
 
             PaymentIntent paymentIntent = PaymentIntent.create(params);
-            
+
             // 3. Second transaction scope: Update payment with Intent ID
             transactionTemplate.executeWithoutResult(status -> {
                 Payment paymentToUpdate = paymentRepository.findById(result.payment().getId()).orElseThrow();
@@ -167,7 +167,8 @@ public class BookingServiceImpl implements BookingService {
     }
 
     // Helper record to pass data between phases
-    private record BookingAndPayment(Booking booking, Payment payment, BigDecimal totalAmount) {}
+    private record BookingAndPayment(Booking booking, Payment payment, BigDecimal totalAmount) {
+    }
 
     @Override
     @Transactional
@@ -302,11 +303,15 @@ public class BookingServiceImpl implements BookingService {
         Page<BookingHistory> historyPage = isUserAdmin ? bookingHistoryRepository.findAll(pageable) : bookingHistoryRepository.findByUserId(userId, pageable);
         return historyPage.map(bookingMapper::toDto);
     }
+
     @Override
     @Transactional(readOnly = true)
     public List<String> getBookedDatesForBike(Long bikeId) {
 
-        List<Booking> bookings = bookingRepository.findByBikeIdAndStatus(bikeId, BookingStatus.CONFIRMED);
+        List<Booking> bookings = bookingRepository.findByBikeIdAndStatuses(
+                bikeId,
+                List.of(BookingStatus.CONFIRMED, BookingStatus.PENDING_PAYMENT)
+        );
 
         Set<LocalDate> bookedDates = new HashSet<>();
 

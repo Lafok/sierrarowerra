@@ -28,7 +28,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     @Query("SELECT DISTINCT b.bike.id FROM Booking b WHERE " +
             "b.status IN (com.sierrarowerra.model.enums.BookingStatus.CONFIRMED, com.sierrarowerra.model.enums.BookingStatus.PENDING_PAYMENT) " +
-            "AND b.bookingStartDate < :endDate AND b.bookingEndDate > :startDate")
+            "AND b.bookingStartDate <= :endDate AND b.bookingEndDate >= :startDate")
     List<Long> findBookedBikeIds(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     List<Booking> findAllByBookingEndDateBefore(LocalDate date);
